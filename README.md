@@ -1,4 +1,4 @@
-# Brückenschlag – Web
+# Linde – Web
 
 Connects seniors with (international) students for language exchange, company and cultural exchange.
 Next.js app, deployed on Vercel. The mobile app lives in `brueckenschlag-mobile`.
