@@ -1,7 +1,7 @@
 # Linde – Web
 
 Connects seniors with (international) students for language exchange, company and cultural exchange.
-Next.js app, deployed on Vercel. The mobile app lives in `brueckenschlag-mobile`.
+Next.js app, deployed on Vercel. The mobile app lives in `linde-mobile`.
 
 The Supabase database schema lives here in `supabase/migrations` and is shared by both apps.
 
