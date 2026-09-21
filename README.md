@@ -15,4 +15,3 @@ cp .env.example .env.local   # then fill in Supabase URL + anon key
 npm run dev                  # http://localhost:3000
 ```
 
-Supabase keys: Supabase dashboard → Project Settings → API. Never commit `.env.local`, because this repo is public.
