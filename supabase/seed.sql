@@ -4,45 +4,47 @@
 -- Every account uses the password: linde1234
 --
 -- profiles.id IS auth.users.id, so the uuids below are both at once.
+--
+-- Everything here is plain set-based SQL on purpose: the CLI's seed runner
+-- batches statements, and a dollar-quoted function body breaks it.
 
--- Creating auth users from SQL needs both an auth.users row and a matching
--- auth.identities row, or password sign-in fails. Dropped again at the bottom.
-create or replace function app.seed_user(p_id uuid, p_email text)
-returns void
-language plpgsql
-as $$
-begin
-  insert into auth.users (
-    instance_id, id, aud, role, email, encrypted_password,
-    email_confirmed_at, created_at, updated_at,
-    raw_app_meta_data, raw_user_meta_data
-  )
-  values (
-    '00000000-0000-0000-0000-000000000000', p_id, 'authenticated', 'authenticated',
-    p_email, extensions.crypt('linde1234', extensions.gen_salt('bf')),
-    now(), now(), now(),
-    '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb
-  )
-  on conflict (id) do nothing;
+-- Auth users. Password sign-in needs BOTH an auth.users row and a matching
+-- auth.identities row, or login fails with "invalid credentials".
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password,
+  email_confirmed_at, created_at, updated_at,
+  raw_app_meta_data, raw_user_meta_data
+)
+select
+  '00000000-0000-0000-0000-000000000000', u.id, 'authenticated', 'authenticated', u.email,
+  extensions.crypt('linde1234', extensions.gen_salt('bf')),
+  now(), now(), now(),
+  '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb
+from (values
+  ('11111111-1111-1111-1111-111111111111'::uuid, 'lena@linde.test'),
+  ('22222222-2222-2222-2222-222222222222'::uuid, 'tariq@linde.test'),
+  ('33333333-3333-3333-3333-333333333333'::uuid, 'ingrid@linde.test'),
+  ('44444444-4444-4444-4444-444444444444'::uuid, 'werner@linde.test'),
+  ('55555555-5555-5555-5555-555555555555'::uuid, 'elisabeth@linde.test')
+) as u(id, email)
+on conflict (id) do nothing;
 
-  insert into auth.identities (
-    id, user_id, identity_data, provider, provider_id,
-    last_sign_in_at, created_at, updated_at
-  )
-  values (
-    gen_random_uuid(), p_id,
-    jsonb_build_object('sub', p_id::text, 'email', p_email),
-    'email', p_id::text, now(), now(), now()
-  )
-  on conflict do nothing;
-end;
-$$;
-
-select app.seed_user('11111111-1111-1111-1111-111111111111', 'lena@linde.test');
-select app.seed_user('22222222-2222-2222-2222-222222222222', 'tariq@linde.test');
-select app.seed_user('33333333-3333-3333-3333-333333333333', 'ingrid@linde.test');
-select app.seed_user('44444444-4444-4444-4444-444444444444', 'werner@linde.test');
-select app.seed_user('55555555-5555-5555-5555-555555555555', 'elisabeth@linde.test');
+insert into auth.identities (
+  id, user_id, identity_data, provider, provider_id,
+  last_sign_in_at, created_at, updated_at
+)
+select
+  gen_random_uuid(), u.id,
+  jsonb_build_object('sub', u.id::text, 'email', u.email),
+  'email', u.id::text, now(), now(), now()
+from (values
+  ('11111111-1111-1111-1111-111111111111'::uuid, 'lena@linde.test'),
+  ('22222222-2222-2222-2222-222222222222'::uuid, 'tariq@linde.test'),
+  ('33333333-3333-3333-3333-333333333333'::uuid, 'ingrid@linde.test'),
+  ('44444444-4444-4444-4444-444444444444'::uuid, 'werner@linde.test'),
+  ('55555555-5555-5555-5555-555555555555'::uuid, 'elisabeth@linde.test')
+) as u(id, email)
+on conflict do nothing;
 
 
 -- Profiles ------------------------------------------------------------------
@@ -133,6 +135,3 @@ values
    'Der Garten blüht gerade, das müssen Sie sehen.',
    now() - interval '1 hour')
 on conflict do nothing;
-
-
-drop function app.seed_user(uuid, text);

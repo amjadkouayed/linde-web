@@ -98,13 +98,15 @@ select is(
 
 -- USING picks the row, WITH CHECK validates the result. Without both, a profile
 -- could be handed to another user.
+-- The UPDATE raises nothing; USING simply matches no row. Ingrid is published,
+-- so Lena can read her back and see the name is untouched.
+update public.profiles set full_name = 'Gekapert'
+where id = '33333333-3333-3333-3333-333333333333';
+
 select is(
-  (with attempt as (
-     update public.profiles set full_name = 'Gekapert'
-     where id = '33333333-3333-3333-3333-333333333333'
-     returning 1)
-   select count(*)::int from attempt),
-  0,
+  (select full_name from public.profiles
+   where id = '33333333-3333-3333-3333-333333333333'),
+  'Ingrid Schäfer',
   'cannot update another user''s profile'
 );
 

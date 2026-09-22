@@ -107,15 +107,13 @@ export async function markConversationRead(connectionId: string): Promise<Action
   if (readError) return { error: readError.message }
   if (!connection) return { error: 'Unterhaltung nicht gefunden.' }
 
-  const column =
+  const now = new Date().toISOString()
+  const patch =
     connection.requester_profile_id === userId
-      ? 'requester_last_read_at'
-      : 'addressee_last_read_at'
+      ? { requester_last_read_at: now }
+      : { addressee_last_read_at: now }
 
-  const { error } = await supabase
-    .from('connections')
-    .update({ [column]: new Date().toISOString() })
-    .eq('id', connectionId)
+  const { error } = await supabase.from('connections').update(patch).eq('id', connectionId)
 
   if (error) return { error: error.message }
 

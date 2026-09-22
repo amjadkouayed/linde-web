@@ -4,6 +4,7 @@ import { cacheLife } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 import { createClient } from '@/lib/supabase/server'
+import type { Tables } from '@/lib/supabase/database.types'
 
 /**
  * What may be cached here, and what may not.
@@ -19,21 +20,11 @@ import { createClient } from '@/lib/supabase/server'
  * which bypasses RLS entirely. Slow and correct beats fast and leaking.
  */
 
-export type Profile = {
-  id: string
-  role: 'student' | 'senior'
-  full_name: string
-  bio: string | null
-  interests: string[]
-  study_field: string | null
-  avatar_path: string | null
-  availability: string | null
-  card_description: string | null
-  is_published: boolean
-  created_at: string
-}
-
-export type DiscoverCard = Omit<Profile, 'is_published'>
+// Generated from the live schema by `npm run db:types` — never hand-write these,
+// they drift the moment a column changes. View columns come back nullable
+// because Postgres cannot prove otherwise through a view.
+export type Profile = Tables<'profiles'>
+export type DiscoverCard = Tables<'discover_feed'>
 
 /** The signed-in user's profile, or null if they have not onboarded yet. */
 export async function getCurrentProfile(): Promise<Profile | null> {
