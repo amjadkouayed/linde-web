@@ -36,8 +36,8 @@ export async function completeOnboarding(formData: FormData): Promise<ActionResu
     return { error: 'Bitte wähle aus, ob du Studierende:r oder Senior:in bist.' }
   }
 
-  const fullName = String(formData.get('full_name') ?? '').trim()
-  if (!fullName) {
+  const name = String(formData.get('name') ?? '').trim()
+  if (!name) {
     return { error: 'Bitte gib deinen Namen an.' }
   }
 
@@ -45,7 +45,7 @@ export async function completeOnboarding(formData: FormData): Promise<ActionResu
   const { error } = await supabase.from('profiles').insert({
     id: user.id,
     role: role as (typeof ROLES)[number],
-    full_name: fullName,
+    name,
     bio: String(formData.get('bio') ?? '').trim() || null,
     interests: parseInterests(formData.get('interests')),
     study_field: role === 'student'
@@ -59,7 +59,14 @@ export async function completeOnboarding(formData: FormData): Promise<ActionResu
   redirect('/discover')
 }
 
-/** "Meine Karte" — availability, description, and whether it is discoverable. */
+/**
+ * "Meine Karte" — the offer. One per person (unique on user_id), so this
+ * upserts rather than branching on whether one already exists.
+ *
+ * postal_code is validated here and again by a CHECK in the database. It is
+ * also the only location we store: lat/lng are a postal-code centroid, never
+ * an address, so a radius filter cannot be used to locate anyone's home.
+ */
 export async function updateMyCard(formData: FormData): Promise<ActionResult> {
   const supabase = await createClient()
 
@@ -68,17 +75,29 @@ export async function updateMyCard(formData: FormData): Promise<ActionResult> {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { error } = await supabase
-    .from('profiles')
-    .update({
-      full_name: String(formData.get('full_name') ?? '').trim(),
-      bio: String(formData.get('bio') ?? '').trim() || null,
-      interests: parseInterests(formData.get('interests')),
-      availability: String(formData.get('availability') ?? '').trim() || null,
-      card_description: String(formData.get('card_description') ?? '').trim() || null,
+  const postalCode = String(formData.get('postal_code') ?? '').trim()
+  if (!/^\d{5}$/.test(postalCode)) {
+    return { error: 'Bitte gib eine gültige fünfstellige Postleitzahl an.' }
+  }
+
+  const availability = String(formData.get('availability') ?? '').trim()
+  const description = String(formData.get('description') ?? '').trim()
+  const city = String(formData.get('city') ?? '').trim()
+  if (!availability || !description || !city) {
+    return { error: 'Verfügbarkeit, Beschreibung und Ort dürfen nicht leer sein.' }
+  }
+
+  const { error } = await supabase.from('offers').upsert(
+    {
+      user_id: user.id,
+      availability,
+      description,
+      postal_code: postalCode,
+      city,
       is_published: formData.get('is_published') === 'on',
-    })
-    .eq('id', user.id)
+    },
+    { onConflict: 'user_id' },
+  )
 
   if (error) return { error: error.message }
 
