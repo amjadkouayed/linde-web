@@ -36,71 +36,65 @@ export type Database = {
     Tables: {
       connections: {
         Row: {
-          addressee_last_read_at: string
-          addressee_profile_id: string
           created_at: string
           id: string
-          requester_last_read_at: string
-          requester_profile_id: string
+          recipient_id: string
+          requester_id: string
           status: string
         }
         Insert: {
-          addressee_last_read_at?: string
-          addressee_profile_id: string
           created_at?: string
           id?: string
-          requester_last_read_at?: string
-          requester_profile_id: string
+          recipient_id: string
+          requester_id: string
           status?: string
         }
         Update: {
-          addressee_last_read_at?: string
-          addressee_profile_id?: string
           created_at?: string
           id?: string
-          requester_last_read_at?: string
-          requester_profile_id?: string
+          recipient_id?: string
+          requester_id?: string
           status?: string
         }
         Relationships: [
           {
-            foreignKeyName: "connections_addressee_profile_id_fkey"
-            columns: ["addressee_profile_id"]
+            foreignKeyName: "connections_recipient_id_fkey"
+            columns: ["recipient_id"]
             isOneToOne: false
             referencedRelation: "connection_overview"
             referencedColumns: ["other_profile_id"]
           },
           {
-            foreignKeyName: "connections_addressee_profile_id_fkey"
-            columns: ["addressee_profile_id"]
+            foreignKeyName: "connections_recipient_id_fkey"
+            columns: ["recipient_id"]
             isOneToOne: false
             referencedRelation: "discover_feed"
-            referencedColumns: ["id"]
+            referencedColumns: ["profile_id"]
           },
           {
-            foreignKeyName: "connections_addressee_profile_id_fkey"
-            columns: ["addressee_profile_id"]
+            foreignKeyName: "connections_recipient_id_fkey"
+            columns: ["recipient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "connections_requester_profile_id_fkey"
-            columns: ["requester_profile_id"]
+            foreignKeyName: "connections_requester_id_fkey"
+            columns: ["requester_id"]
             isOneToOne: false
             referencedRelation: "connection_overview"
             referencedColumns: ["other_profile_id"]
           },
           {
-            foreignKeyName: "connections_requester_profile_id_fkey"
-            columns: ["requester_profile_id"]
+            foreignKeyName: "connections_requester_id_fkey"
+            columns: ["requester_id"]
             isOneToOne: false
             referencedRelation: "discover_feed"
-            referencedColumns: ["id"]
+            referencedColumns: ["profile_id"]
           },
           {
-            foreignKeyName: "connections_requester_profile_id_fkey"
-            columns: ["requester_profile_id"]
+            foreignKeyName: "connections_requester_id_fkey"
+            columns: ["requester_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -112,22 +106,25 @@ export type Database = {
           body: string
           connection_id: string
           created_at: string
-          id: string
-          sender_profile_id: string
+          id: number
+          read_at: string | null
+          sender_id: string
         }
         Insert: {
           body: string
           connection_id: string
           created_at?: string
-          id?: string
-          sender_profile_id: string
+          id?: never
+          read_at?: string | null
+          sender_id: string
         }
         Update: {
           body?: string
           connection_id?: string
           created_at?: string
-          id?: string
-          sender_profile_id?: string
+          id?: never
+          read_at?: string | null
+          sender_id?: string
         }
         Relationships: [
           {
@@ -145,23 +142,84 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "messages_sender_profile_id_fkey"
-            columns: ["sender_profile_id"]
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "connection_overview"
             referencedColumns: ["other_profile_id"]
           },
           {
-            foreignKeyName: "messages_sender_profile_id_fkey"
-            columns: ["sender_profile_id"]
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "discover_feed"
-            referencedColumns: ["id"]
+            referencedColumns: ["profile_id"]
           },
           {
-            foreignKeyName: "messages_sender_profile_id_fkey"
-            columns: ["sender_profile_id"]
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
             isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      offers: {
+        Row: {
+          availability: string
+          city: string
+          created_at: string
+          description: string
+          id: string
+          is_published: boolean
+          lat: number | null
+          lng: number | null
+          postal_code: string
+          user_id: string
+        }
+        Insert: {
+          availability: string
+          city: string
+          created_at?: string
+          description: string
+          id?: string
+          is_published?: boolean
+          lat?: number | null
+          lng?: number | null
+          postal_code: string
+          user_id: string
+        }
+        Update: {
+          availability?: string
+          city?: string
+          created_at?: string
+          description?: string
+          id?: string
+          is_published?: boolean
+          lat?: number | null
+          lng?: number | null
+          postal_code?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "connection_overview"
+            referencedColumns: ["other_profile_id"]
+          },
+          {
+            foreignKeyName: "offers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "discover_feed"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "offers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -169,41 +227,32 @@ export type Database = {
       }
       profiles: {
         Row: {
-          availability: string | null
           avatar_path: string | null
           bio: string | null
-          card_description: string | null
           created_at: string
-          full_name: string
           id: string
           interests: string[]
-          is_published: boolean
+          name: string
           role: string
           study_field: string | null
         }
         Insert: {
-          availability?: string | null
           avatar_path?: string | null
           bio?: string | null
-          card_description?: string | null
           created_at?: string
-          full_name: string
           id: string
           interests?: string[]
-          is_published?: boolean
+          name: string
           role: string
           study_field?: string | null
         }
         Update: {
-          availability?: string | null
           avatar_path?: string | null
           bio?: string | null
-          card_description?: string | null
           created_at?: string
-          full_name?: string
           id?: string
           interests?: string[]
-          is_published?: boolean
+          name?: string
           role?: string
           study_field?: string | null
         }
@@ -219,35 +268,30 @@ export type Database = {
           last_message_at: string | null
           last_message_body: string | null
           last_message_sender_id: string | null
-          other_availability: string | null
           other_avatar_path: string | null
-          other_bio: string | null
-          other_card_description: string | null
-          other_full_name: string | null
-          other_interests: string[] | null
+          other_name: string | null
           other_profile_id: string | null
           other_role: string | null
-          other_study_field: string | null
           status: string | null
           unread_count: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "messages_sender_profile_id_fkey"
+            foreignKeyName: "messages_sender_id_fkey"
             columns: ["last_message_sender_id"]
             isOneToOne: false
             referencedRelation: "connection_overview"
             referencedColumns: ["other_profile_id"]
           },
           {
-            foreignKeyName: "messages_sender_profile_id_fkey"
+            foreignKeyName: "messages_sender_id_fkey"
             columns: ["last_message_sender_id"]
             isOneToOne: false
             referencedRelation: "discover_feed"
-            referencedColumns: ["id"]
+            referencedColumns: ["profile_id"]
           },
           {
-            foreignKeyName: "messages_sender_profile_id_fkey"
+            foreignKeyName: "messages_sender_id_fkey"
             columns: ["last_message_sender_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -260,37 +304,16 @@ export type Database = {
           availability: string | null
           avatar_path: string | null
           bio: string | null
-          card_description: string | null
+          city: string | null
           created_at: string | null
-          full_name: string | null
-          id: string | null
+          description: string | null
           interests: string[] | null
+          name: string | null
+          offer_id: string | null
+          postal_code: string | null
+          profile_id: string | null
           role: string | null
           study_field: string | null
-        }
-        Insert: {
-          availability?: string | null
-          avatar_path?: string | null
-          bio?: string | null
-          card_description?: string | null
-          created_at?: string | null
-          full_name?: string | null
-          id?: string | null
-          interests?: string[] | null
-          role?: string | null
-          study_field?: string | null
-        }
-        Update: {
-          availability?: string | null
-          avatar_path?: string | null
-          bio?: string | null
-          card_description?: string | null
-          created_at?: string | null
-          full_name?: string | null
-          id?: string | null
-          interests?: string[] | null
-          role?: string | null
-          study_field?: string | null
         }
         Relationships: []
       }

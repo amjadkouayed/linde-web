@@ -10,8 +10,8 @@ import type { ActionResult } from './profile'
 /**
  * Each of these re-reads the session rather than trusting the caller, and the
  * database refuses the rest: app.can_connect decides who may be asked,
- * app.connections_guard_update decides who may answer and which columns may
- * move, and messages_insert binds a message's sender to its thread.
+ * app.connections_guard_update decides who may answer, and messages_insert
+ * binds a message's sender to its thread.
  */
 
 async function requireSession() {
@@ -23,12 +23,12 @@ async function requireSession() {
   return { supabase, userId: user.id }
 }
 
-export async function sendConnectionRequest(addresseeProfileId: string): Promise<ActionResult> {
+export async function sendConnectionRequest(recipientId: string): Promise<ActionResult> {
   const { supabase, userId } = await requireSession()
 
   const { error } = await supabase.from('connections').insert({
-    requester_profile_id: userId,
-    addressee_profile_id: addresseeProfileId,
+    requester_id: userId,
+    recipient_id: recipientId,
     status: 'pending',
   })
 
@@ -82,7 +82,7 @@ export async function sendMessage(connectionId: string, body: string): Promise<A
 
   const { error } = await supabase.from('messages').insert({
     connection_id: connectionId,
-    sender_profile_id: userId,
+    sender_id: userId,
     body: trimmed,
   })
 
@@ -93,27 +93,20 @@ export async function sendMessage(connectionId: string, body: string): Promise<A
   return { error: null }
 }
 
+/**
+ * One UPDATE touching every unread message from the other person. The policy
+ * refuses to touch your own messages, so no filter for that is needed here —
+ * but keeping it makes the intent obvious and the statement cheaper.
+ */
 export async function markConversationRead(connectionId: string): Promise<ActionResult> {
   const { supabase, userId } = await requireSession()
 
-  // Which side am I on? The guard trigger rejects any attempt to mark the other
-  // participant's side read, so this has to pick the right column.
-  const { data: connection, error: readError } = await supabase
-    .from('connections')
-    .select('requester_profile_id')
-    .eq('id', connectionId)
-    .maybeSingle()
-
-  if (readError) return { error: readError.message }
-  if (!connection) return { error: 'Unterhaltung nicht gefunden.' }
-
-  const now = new Date().toISOString()
-  const patch =
-    connection.requester_profile_id === userId
-      ? { requester_last_read_at: now }
-      : { addressee_last_read_at: now }
-
-  const { error } = await supabase.from('connections').update(patch).eq('id', connectionId)
+  const { error } = await supabase
+    .from('messages')
+    .update({ read_at: new Date().toISOString() })
+    .eq('connection_id', connectionId)
+    .neq('sender_id', userId)
+    .is('read_at', null)
 
   if (error) return { error: error.message }
 

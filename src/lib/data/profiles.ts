@@ -24,6 +24,7 @@ import type { Tables } from '@/lib/supabase/database.types'
 // they drift the moment a column changes. View columns come back nullable
 // because Postgres cannot prove otherwise through a view.
 export type Profile = Tables<'profiles'>
+export type Offer = Tables<'offers'>
 export type DiscoverCard = Tables<'discover_feed'>
 
 /** The signed-in user's profile, or null if they have not onboarded yet. */
@@ -55,10 +56,29 @@ export async function requireProfile(): Promise<Profile> {
   return profile
 }
 
+/** The signed-in user's own card, or null if they haven't written one. */
+export async function getMyOffer(): Promise<Offer | null> {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const { data } = await supabase
+    .from('offers')
+    .select('*')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  return data
+}
+
 /**
- * Discover feed — one query, no joins, nothing to filter client-side. The
+ * Discover feed — one query, no N+1, nothing to filter client-side. The
  * discover_feed view already restricts this to published cards of the opposite
- * role that the caller has no connection with.
+ * role that the caller has no connection with, and deliberately does not expose
+ * coordinates.
  */
 export async function getDiscoverFeed(interests?: string[]): Promise<DiscoverCard[]> {
   const supabase = await createClient()
