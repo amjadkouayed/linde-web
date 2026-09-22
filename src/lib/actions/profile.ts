@@ -63,6 +63,18 @@ export async function completeOnboarding(formData: FormData): Promise<ActionResu
       ? (rawStatus as (typeof SENIOR_STATUSES)[number])
       : null
 
+  // Location lives on the person, not on the card (0005): the discover filter
+  // is pre-filled from it, and someone who has not written an offer yet still
+  // has to be able to search. Postal code only — never a street or a number.
+  const postalCode = String(formData.get('postal_code') ?? '').trim()
+  if (!/^\d{5}$/.test(postalCode)) {
+    return { error: 'Bitte gib eine gültige fünfstellige Postleitzahl an.' }
+  }
+  const city = String(formData.get('city') ?? '').trim()
+  if (!city) {
+    return { error: 'Bitte gib deinen Ort an.' }
+  }
+
   // profiles.id IS the auth user id, so the row can only ever be the caller's.
   const { error } = await supabase.from('profiles').insert({
     id: user.id,
@@ -70,6 +82,8 @@ export async function completeOnboarding(formData: FormData): Promise<ActionResu
     name,
     birth_year: birthYear,
     status,
+    postal_code: postalCode,
+    city,
     bio: String(formData.get('bio') ?? '').trim() || null,
     interests: parseInterests(formData.get('interests')),
     study_field: role === 'student'
@@ -87,11 +101,48 @@ export async function completeOnboarding(formData: FormData): Promise<ActionResu
  * "Meine Karte" — the offer. One per person (unique on user_id), so this
  * upserts rather than branching on whether one already exists.
  *
- * postal_code is validated here and again by a CHECK in the database. It is
- * also the only location we store: lat/lng are a postal-code centroid, never
- * an address, so a radius filter cannot be used to locate anyone's home.
+ * The location is NOT here: since 0005 it lives on the profile, so the offer
+ * form shows it pre-filled and a change to it goes through updateMyLocation.
  */
 export async function updateMyCard(formData: FormData): Promise<ActionResult> {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const availability = String(formData.get('availability') ?? '').trim()
+  const description = String(formData.get('description') ?? '').trim()
+  if (!availability || !description) {
+    return { error: 'Verfügbarkeit und Beschreibung dürfen nicht leer sein.' }
+  }
+
+  const { error } = await supabase.from('offers').upsert(
+    {
+      user_id: user.id,
+      availability,
+      description,
+      is_published: formData.get('is_published') === 'on',
+    },
+    { onConflict: 'user_id' },
+  )
+
+  if (error) return { error: error.message }
+
+  // getCurrentProfile caches in the browser, so refresh the router to pick the
+  // edit up immediately rather than waiting out its 30s stale window.
+  refresh()
+  return { error: null }
+}
+
+/**
+ * Where the person is. Asked once in onboarding, editable in Profil, and shown
+ * pre-filled in the offer form. lat/lng stay untouched here: they are the
+ * centroid of the postal code, derived from the postal_codes table, never
+ * something a client sends.
+ */
+export async function updateMyLocation(formData: FormData): Promise<ActionResult> {
   const supabase = await createClient()
 
   const {
@@ -103,30 +154,18 @@ export async function updateMyCard(formData: FormData): Promise<ActionResult> {
   if (!/^\d{5}$/.test(postalCode)) {
     return { error: 'Bitte gib eine gültige fünfstellige Postleitzahl an.' }
   }
-
-  const availability = String(formData.get('availability') ?? '').trim()
-  const description = String(formData.get('description') ?? '').trim()
   const city = String(formData.get('city') ?? '').trim()
-  if (!availability || !description || !city) {
-    return { error: 'Verfügbarkeit, Beschreibung und Ort dürfen nicht leer sein.' }
+  if (!city) {
+    return { error: 'Bitte gib deinen Ort an.' }
   }
 
-  const { error } = await supabase.from('offers').upsert(
-    {
-      user_id: user.id,
-      availability,
-      description,
-      postal_code: postalCode,
-      city,
-      is_published: formData.get('is_published') === 'on',
-    },
-    { onConflict: 'user_id' },
-  )
+  const { error } = await supabase
+    .from('profiles')
+    .update({ postal_code: postalCode, city })
+    .eq('id', user.id)
 
   if (error) return { error: error.message }
 
-  // getCurrentProfile caches in the browser, so refresh the router to pick the
-  // edit up immediately rather than waiting out its 30s stale window.
   refresh()
   return { error: null }
 }
