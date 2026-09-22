@@ -1,0 +1,77 @@
+import Link from 'next/link'
+
+import { Avatar } from '@/components/avatar'
+import type { DiscoverCard } from '@/lib/data/profiles'
+
+const STATUS_LABEL: Record<string, string> = {
+  rentner: 'Rentner',
+  rentnerin: 'Rentnerin',
+  berufstaetig: 'Noch berufstätig',
+}
+
+/**
+ * Card anatomy, from the design:
+ * - name on its own line, place right-aligned with a gold dot;
+ * - age is a CHIP among the facts, never next to the name;
+ * - one outlined action, so three cards do not shout three primary buttons.
+ */
+export function OfferCard({ card }: { card: DiscoverCard }) {
+  const firstName = (card.name ?? '').split(' ')[0] || 'diese Person'
+  const detail = card.role === 'student' ? card.study_field : STATUS_LABEL[card.status ?? '']
+
+  return (
+    <article className="flex flex-col gap-3.5 rounded-card border border-line bg-raised p-5">
+      <div className="flex items-start gap-4">
+        <Avatar name={card.name} size={80} />
+
+        <div className="flex min-w-0 flex-grow flex-col gap-1.5">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="font-serif text-2xl font-semibold">{card.name}</h2>
+            {card.city && (
+              <span className="flex items-center gap-1.5 whitespace-nowrap text-[17px] font-bold text-muted">
+                <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-accent" />
+                {card.city}
+              </span>
+            )}
+          </div>
+
+          {detail && <span className="text-[16px] text-muted">{detail}</span>}
+          {card.bio && <p className="text-pretty text-[18px] leading-relaxed">{card.bio}</p>}
+        </div>
+      </div>
+
+      {card.description && (
+        <p className="text-pretty text-[18px] leading-relaxed">{card.description}</p>
+      )}
+
+      <ul aria-label="Alter, Verfügbarkeit und Interessen" className="flex flex-wrap gap-2">
+        {card.age != null && <Fact>{card.age} Jahre</Fact>}
+        {card.availability && <Fact>{card.availability}</Fact>}
+        {(card.interests ?? []).map((interest) => (
+          <li
+            key={interest}
+            className="rounded-full border border-line bg-tag px-3.5 py-1.5 text-[16px] font-bold"
+          >
+            {interest}
+          </li>
+        ))}
+      </ul>
+
+      <Link
+        href={`/anfrage/${card.profile_id}`}
+        className="press mt-auto flex min-h-[54px] items-center justify-center rounded-button border-2 border-brand bg-raised text-[18px] font-bold text-brand-pressed no-underline"
+      >
+        Anfrage an {firstName}
+      </Link>
+    </article>
+  )
+}
+
+/** A fact about the person, visually distinct from interests, which are choices. */
+function Fact({ children }: { children: React.ReactNode }) {
+  return (
+    <li className="rounded-full border border-control bg-raised px-3.5 py-1.5 text-[16px] font-bold text-muted">
+      {children}
+    </li>
+  )
+}

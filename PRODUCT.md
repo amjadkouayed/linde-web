@@ -41,12 +41,13 @@ Project context: a school project for the **UNESCO Projekttage**, built in one w
 **Confirmed**
 
 - Two roles, `student` and `senior`, chosen once during onboarding and not changeable afterwards. Students see seniors, seniors see students.
-- **One offer per person** ("Meine Karte"), stored as columns on the profile, with three fields: postal code and place, availability as free text, and a description. Create, edit, delete; deleting asks for confirmation.
-- **Location is the postal code only.** Asked once in onboarding step 2, required, pre-filled into the offer and the search filter. No street, no house number, no device coordinates. Distances are shown rounded ("ca. 3 km").
+- **One offer per person** ("Meine Karte"), with two fields of its own — availability as free text and a description — plus the location, which comes from the profile. Create, edit, delete; deleting asks for confirmation.
+- **Location is the postal code only.** It belongs to the person, not the offer (migration 0005): asked once in onboarding step 2, required, pre-filled into both the offer form and the search filter, so somebody without an offer can still search. No street, no house number, no device coordinates. Distances are shown rounded ("ca. 3 km").
+- **Offer views are counted as distinct people per week**, once per person per day, so refreshing a page cannot inflate the number. The screen says "34 Personen haben Ihr Angebot diese Woche angesehen".
 - Discover has an always-visible location filter: postal code plus a radius of 5 / 10 / 25 / 50 / 100 km, with 25 km pre-selected.
 - Connections: a request carries a written message, the recipient accepts or declines, an accepted request becomes a chat with an unread badge.
 - Login is passwordless: Google, Apple, or a 6-digit code by e-mail. No phone number, no password. Onboarding is three short steps: role, profile, interests.
-- **Age is never shown next to a name.** People may mention it in their own bio text if they want.
+- **Age is never shown next to a name.** It is collected in onboarding, stored as `birth_year` so it cannot go stale, and displayed as a small chip alongside location and availability — a fact among facts, not a headline.
 - German throughout, formal "Sie", which matters for the senior audience.
 - Row-level security in Supabase is the real boundary. The service-role key is never used in the app.
 - Realtime chat via Supabase; unread counts come from per-side read timestamps.
@@ -54,9 +55,9 @@ Project context: a school project for the **UNESCO Projekttage**, built in one w
 **Open, to be decided**
 
 - Whether "Sign in with Apple" is affordable: it needs an Apple Developer account at 99 €/year, including for the web version. Google and e-mail are free.
-- Whether the profile view count means views or distinct people per week. The UI currently says "Personen", which requires storing who viewed and counting each person once.
-- The region the presentation demo is set in. Sample content uses Munich postal codes.
-- Whether the mobile app gets its own onboarding or reuses the web flow screen for screen.
+- **Which city the project is set in.** The seed data uses Osnabrück; the design mockups use München. They should agree before the presentation.
+- The radius search itself: `profiles.lat`/`lng` are empty and there is no `postal_codes` table yet, so the filter currently cannot search by distance.
+- Whether the mobile app reuses the web onboarding flow screen for screen or gets its own.
 
 ## Brand Commitments
 

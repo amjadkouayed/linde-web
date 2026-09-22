@@ -1,26 +1,57 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+ * Linde's design tokens.
+ *
+ * The two border colours are darker than they look like they should be, on
+ * purpose: the original design failed WCAG at 3.4:1 for muted text and 1.4:1
+ * for input borders. These measure 5.4:1 and 3.5:1. Do not lighten them.
+ */
+@theme {
+  --color-surface: #f6f1e3;
+  --color-raised: #fffcf4;
+  --color-ink: #2f2b1e;
+  --color-muted: #69624c;
+  --color-brand: #55713f;
+  --color-brand-pressed: #3f5630;
+  --color-accent: #c99a3e;
+  --color-tag: #ede3c8;
+  --color-line: #d9cba3;
+  --color-control: #948659;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --font-serif: var(--font-bitter), Georgia, serif;
+  --font-sans: var(--font-karla), system-ui, sans-serif;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --radius-card: 18px;
+  --radius-button: 14px;
+  --radius-input: 12px;
+
+  --ease-linde: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  /* The audience is older: 17px is the floor for body text, never 16. */
+  font-size: 17px;
+}
+
+/* Press feedback is the main affordance, not a colour change. */
+.press {
+  transition: transform 160ms var(--ease-linde);
+}
+.press:active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .press:active {
+    transform: none;
+  }
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-brand);
+  outline-offset: 2px;
 }
