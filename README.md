@@ -67,9 +67,22 @@ verified before it will deliver to real addresses.
 `student` and `senior`. Everyone owns their own account, so `profiles.id` **is** `auth.users.id` —
 which is what keeps every RLS policy a direct comparison against `auth.uid()` instead of a subquery.
 
-"Meine Karte" is two columns on `profiles` (`availability`, `card_description`) rather than its own
-table: one card per person, so a separate table would buy only a join and an N+1 on the busiest
-screen.
+Four tables: `profiles` (the person), `offers` ("Meine Karte" — what they post, one per person,
+enforced by `unique (user_id)`), `connections`, and `messages`. Keeping the offer separate from the
+person is what gives location somewhere natural to live.
+
+### Location, and why there are no addresses
+
+`offers` stores `postal_code`, `city` and a `lat`/`lng` **centroid of the postal code — never a
+street address**. `discover_feed` does not select the coordinates at all.
+
+This is deliberate and worth not undoing. A radius filter is trilaterable: probe it from three
+positions and you recover whatever is stored. Because what's stored is a postal-code centroid, the
+most anyone can ever recover is the postal area the user already chose to disclose. For an app whose
+purpose is sending a stranger to an elderly person's front door, that difference matters.
+
+If you add distance sorting, compute it server-side in the view and return a rounded band. Do not
+send coordinates to the client.
 
 ### Security
 
@@ -126,15 +139,23 @@ silently stops delivering after an hour.
 
 ## Cloud
 
-Build against local Supabase, then promote the same migrations unchanged:
+The project is linked and these migrations are **already deployed**. To promote a new one:
 
 ```bash
-supabase link --project-ref <ref>
 supabase db push
 ```
 
-Before going live, turn on email confirmations (`[auth.email] enable_confirmations`) — it is off
-locally so the demo accounts work without an inbox.
+**The dashboard is not the source of truth.** Schema written there is invisible to review, never
+reaches the generated types the mobile app depends on, and is silently destroyed by the next
+`db push`. Every schema change belongs in `supabase/migrations`. If you need to explore in the
+dashboard, fine — but write the result as a migration before anyone builds on it.
+
+The cloud database is deliberately **not seeded**: `seed.sql` is committed to a public repo, so
+seeding it would put five accounts with a published password on the internet. Sign up through the
+app instead. Demo accounts exist locally only.
+
+Before real use, turn on email confirmations (`[auth.email] enable_confirmations`) — it is off
+locally so the demo logins work without an inbox.
 
 ## Sharing the schema with `linde-mobile`
 
