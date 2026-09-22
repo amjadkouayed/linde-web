@@ -11,7 +11,7 @@ import { createClient } from '@/lib/supabase/server'
  * here re-reads the session itself, and RLS is the backstop underneath.
  */
 
-export type ActionResult = { error: string } | { error: null }
+export type ActionResult = { error: string | null }
 
 const ROLES = ['student', 'senior'] as const
 

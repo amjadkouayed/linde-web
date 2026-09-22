@@ -11,21 +11,20 @@ import type { ActionResult } from './profile'
  * Each of these re-reads the session rather than trusting the caller, and the
  * database refuses the rest: app.can_connect decides who may be asked,
  * app.connections_guard_update decides who may answer and which columns may
- * move, and app.can_post_message binds a message's sender to its thread.
+ * move, and messages_insert binds a message's sender to its thread.
  */
 
-async function requireUserId(): Promise<string> {
+async function requireSession() {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
-  return user.id
+  return { supabase, userId: user.id }
 }
 
 export async function sendConnectionRequest(addresseeProfileId: string): Promise<ActionResult> {
-  const userId = await requireUserId()
-  const supabase = await createClient()
+  const { supabase, userId } = await requireSession()
 
   const { error } = await supabase.from('connections').insert({
     requester_profile_id: userId,
@@ -50,8 +49,7 @@ export async function answerConnectionRequest(
   connectionId: string,
   accept: boolean,
 ): Promise<ActionResult> {
-  await requireUserId()
-  const supabase = await createClient()
+  const { supabase } = await requireSession()
 
   const { error } = await supabase
     .from('connections')
@@ -66,8 +64,7 @@ export async function answerConnectionRequest(
 
 /** Withdraw your own request, or clear one that was declined. */
 export async function withdrawConnectionRequest(connectionId: string): Promise<ActionResult> {
-  await requireUserId()
-  const supabase = await createClient()
+  const { supabase } = await requireSession()
 
   const { error } = await supabase.from('connections').delete().eq('id', connectionId)
   if (error) return { error: error.message }
@@ -77,8 +74,7 @@ export async function withdrawConnectionRequest(connectionId: string): Promise<A
 }
 
 export async function sendMessage(connectionId: string, body: string): Promise<ActionResult> {
-  const userId = await requireUserId()
-  const supabase = await createClient()
+  const { supabase, userId } = await requireSession()
 
   const trimmed = body.trim()
   if (!trimmed) return { error: 'Die Nachricht ist leer.' }
@@ -98,8 +94,7 @@ export async function sendMessage(connectionId: string, body: string): Promise<A
 }
 
 export async function markConversationRead(connectionId: string): Promise<ActionResult> {
-  const userId = await requireUserId()
-  const supabase = await createClient()
+  const { supabase, userId } = await requireSession()
 
   // Which side am I on? The guard trigger rejects any attempt to mark the other
   // participant's side read, so this has to pick the right column.

@@ -202,7 +202,7 @@ select is(
 );
 
 -- Tariq is a participant of the accepted connection, but the sender must be
--- him. can_post_message binds the two together so a sender cannot be forged.
+-- him. messages_insert binds the two together so a sender cannot be forged.
 select tests_as('22222222-2222-2222-2222-222222222222');
 select throws_ok(
   $$insert into public.messages (connection_id, sender_profile_id, body)

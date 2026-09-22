@@ -133,7 +133,8 @@ as $$
   )
 $$;
 
--- Messages are readable only once the connection is accepted.
+-- Am I a participant of this connection, and has it been accepted? Gates both
+-- reading a thread and posting to it.
 create function app.can_read_messages(conn uuid)
 returns boolean
 language sql
@@ -146,24 +147,6 @@ as $$
     where c.id = conn
       and c.status = 'accepted'
       and (select auth.uid()) in (c.requester_profile_id, c.addressee_profile_id)
-  )
-$$;
-
--- One predicate, not two: "the connection is mine" and "the sender is me" are
--- bound together so a sender can never be forged onto someone else's thread.
-create function app.can_post_message(conn uuid, sender uuid)
-returns boolean
-language sql
-stable
-security definer
-set search_path = ''
-as $$
-  select exists (
-    select 1 from public.connections c
-    where c.id = conn
-      and c.status = 'accepted'
-      and sender = (select auth.uid())
-      and sender in (c.requester_profile_id, c.addressee_profile_id)
   )
 $$;
 
@@ -312,8 +295,13 @@ create policy messages_select on public.messages
   for select to authenticated
   using ((select app.can_read_messages(connection_id)));
 
+-- Both halves in one predicate, so a sender can never be forged onto a thread:
+-- the sender must BE the caller, and the thread must be one the caller is in.
 create policy messages_insert on public.messages
   for insert to authenticated
-  with check ((select app.can_post_message(connection_id, sender_profile_id)));
+  with check (
+    sender_profile_id = (select auth.uid())
+    and (select app.can_read_messages(connection_id))
+  );
 
 -- No UPDATE or DELETE policy: messages are immutable once sent.

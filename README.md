@@ -28,6 +28,38 @@ Demo accounts (password `linde1234` for all): `lena@`, `tariq@`, `ingrid@`, `wer
 | `npm run db:test` | run the row level security tests |
 | `npm run db:types` | regenerate the TypeScript types after a schema change |
 
+## Secrets — this repo is public
+
+`.gitignore` ignores `.env*` except `.env.example`, and nothing secret is committed. Know which
+of these is which before you paste anything anywhere:
+
+| | Secret? | Lives in |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | no | `.env.local`, Vercel env vars |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or `sb_publishable_…`) | no — designed to ship to the browser | same |
+| `RESEND_API_KEY` | **yes** | local `.env`; for cloud, Supabase dashboard → Auth → SMTP |
+| `service_role` / `sb_secret_…` | **yes** | nowhere — nothing in this app needs it |
+| database password | **yes** | Supabase dashboard only |
+
+The anon/publishable key is not a credential. It names the project and nothing else; row level
+security decides who sees what. It is safe in the client bundle and safe in a public repo — **but
+only because RLS is on for every table.** That is also exactly why the service-role key must never
+appear here: it bypasses RLS, and would turn a public key into a public database.
+
+`supabase/config.toml` is committed, so it never contains a literal secret — it uses
+`env(RESEND_API_KEY)` substitution, which the CLI fills in from your shell or `.env`.
+
+`.env.example` holds variable *names* with empty values and nothing else. If you add a variable,
+add its name there so the next person knows it exists.
+
+### Email (Resend)
+
+SMTP is configured for Resend in `config.toml` but **disabled locally** — mail goes to Mailpit on
+<http://localhost:54324> instead, so the demo accounts work without an inbox. For the cloud
+project, set SMTP in the Supabase dashboard rather than in this file: host `smtp.resend.com`,
+port `587`, username `resend`, password = the Resend API key. Resend needs the sending domain
+verified before it will deliver to real addresses.
+
 ## Architecture
 
 ### Two roles, and a profile *is* an auth user
