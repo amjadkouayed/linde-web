@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# impeccable engine binary (downloads itself on first use)
+.claude/skills/impeccable/scripts/bin/
