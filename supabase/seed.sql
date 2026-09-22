@@ -51,25 +51,25 @@ on conflict do nothing;
 
 -- Profiles ------------------------------------------------------------------
 
-insert into public.profiles (id, role, name, bio, interests, study_field)
+insert into public.profiles (id, role, name, birth_year, status, bio, interests, study_field)
 values
-  ('11111111-1111-1111-1111-111111111111', 'student', 'Lena Vogt',
+  ('11111111-1111-1111-1111-111111111111', 'student', 'Lena Vogt', 2002, null,
    'Medizinstudentin im 4. Semester. Ich koche gern und höre gern Geschichten von früher.',
    array['Kochen', 'Musik', 'Spazieren'], 'Medizin'),
 
-  ('22222222-2222-2222-2222-222222222222', 'student', 'Tariq Haddad',
+  ('22222222-2222-2222-2222-222222222222', 'student', 'Tariq Haddad', 2003, null,
    'Ich komme aus Jordanien und studiere seit einem Jahr in Osnabrück. Ich möchte mein Deutsch verbessern.',
    array['Sprache', 'Schach', 'Fotografie'], 'Informatik'),
 
-  ('33333333-3333-3333-3333-333333333333', 'senior', 'Ingrid Schäfer',
+  ('33333333-3333-3333-3333-333333333333', 'senior', 'Ingrid Schäfer', 1948, 'rentnerin',
    'Ich war 35 Jahre lang Lehrerin. Heute lese ich viel und arbeite im Garten.',
    array['Lesen', 'Garten', 'Sprache'], null),
 
-  ('44444444-4444-4444-4444-444444444444', 'senior', 'Werner Pohl',
+  ('44444444-4444-4444-4444-444444444444', 'senior', 'Werner Pohl', 1945, 'rentner',
    'Früher Schlosser, heute Schachspieler. Ich erkläre gern, wie Dinge funktionieren.',
    array['Schach', 'Technik', 'Musik'], null),
 
-  ('55555555-5555-5555-5555-555555555555', 'senior', 'Elisabeth Wagner',
+  ('55555555-5555-5555-5555-555555555555', 'senior', 'Elisabeth Wagner', 1957, 'berufstaetig',
    'Ich singe im Chor und erzähle gern von meiner Zeit in Hamburg.',
    array['Musik', 'Geschichte', 'Kochen'], null)
 on conflict (id) do nothing;
@@ -120,14 +120,27 @@ values
    'accepted')
 on conflict (id) do nothing;
 
--- Pending: gives the requests UI something to answer.
-insert into public.connections (id, requester_id, recipient_id, status)
+-- Pending: gives the requests UI something to answer, greeting and all.
+insert into public.connections (id, requester_id, recipient_id, status, intro_message)
 values
   ('bbbbbbbb-0000-0000-0000-000000000002',
    '11111111-1111-1111-1111-111111111111',
    '44444444-4444-4444-4444-444444444444',
-   'pending')
+   'pending',
+   'Guten Tag Herr Pohl! Ich würde sehr gern Schach lernen und bringe Kuchen mit.')
 on conflict (id) do nothing;
+
+-- A few views, so "Aufrufe diese Woche" is not zero on first load.
+insert into public.offer_views (offer_id, viewer_id, viewed_on)
+select o.id, v.viewer_id, current_date - v.days_ago
+from public.offers o
+join (values
+  ('11111111-1111-1111-1111-111111111111'::uuid, 1),
+  ('11111111-1111-1111-1111-111111111111'::uuid, 3),
+  ('22222222-2222-2222-2222-222222222222'::uuid, 2)
+) as v(viewer_id, days_ago) on true
+where o.user_id = '44444444-4444-4444-4444-444444444444'
+on conflict do nothing;
 
 -- The last message is unread, so the badge has something to show on first load.
 insert into public.messages (connection_id, sender_id, body, read_at, created_at)

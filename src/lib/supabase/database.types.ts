@@ -38,6 +38,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          intro_message: string | null
           recipient_id: string
           requester_id: string
           status: string
@@ -45,6 +46,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          intro_message?: string | null
           recipient_id: string
           requester_id: string
           status?: string
@@ -52,6 +54,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          intro_message?: string | null
           recipient_id?: string
           requester_id?: string
           status?: string
@@ -164,6 +167,67 @@ export type Database = {
           },
         ]
       }
+      offer_views: {
+        Row: {
+          offer_id: string
+          viewed_on: string
+          viewer_id: string
+        }
+        Insert: {
+          offer_id: string
+          viewed_on?: string
+          viewer_id: string
+        }
+        Update: {
+          offer_id?: string
+          viewed_on?: string
+          viewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offer_views_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "discover_feed"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "offer_views_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "my_offer_stats"
+            referencedColumns: ["offer_id"]
+          },
+          {
+            foreignKeyName: "offer_views_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_views_viewer_id_fkey"
+            columns: ["viewer_id"]
+            isOneToOne: false
+            referencedRelation: "connection_overview"
+            referencedColumns: ["other_profile_id"]
+          },
+          {
+            foreignKeyName: "offer_views_viewer_id_fkey"
+            columns: ["viewer_id"]
+            isOneToOne: false
+            referencedRelation: "discover_feed"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "offer_views_viewer_id_fkey"
+            columns: ["viewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       offers: {
         Row: {
           availability: string
@@ -229,31 +293,37 @@ export type Database = {
         Row: {
           avatar_path: string | null
           bio: string | null
+          birth_year: number
           created_at: string
           id: string
           interests: string[]
           name: string
           role: string
+          status: string | null
           study_field: string | null
         }
         Insert: {
           avatar_path?: string | null
           bio?: string | null
+          birth_year: number
           created_at?: string
           id: string
           interests?: string[]
           name: string
           role: string
+          status?: string | null
           study_field?: string | null
         }
         Update: {
           avatar_path?: string | null
           bio?: string | null
+          birth_year?: number
           created_at?: string
           id?: string
           interests?: string[]
           name?: string
           role?: string
+          status?: string | null
           study_field?: string | null
         }
         Relationships: []
@@ -265,13 +335,16 @@ export type Database = {
           connection_id: string | null
           created_at: string | null
           i_am_requester: boolean | null
+          intro_message: string | null
           last_message_at: string | null
           last_message_body: string | null
           last_message_sender_id: string | null
+          other_age: number | null
           other_avatar_path: string | null
           other_name: string | null
           other_profile_id: string | null
           other_role: string | null
+          other_status: string | null
           status: string | null
           unread_count: number | null
         }
@@ -301,6 +374,7 @@ export type Database = {
       }
       discover_feed: {
         Row: {
+          age: number | null
           availability: string | null
           avatar_path: string | null
           bio: string | null
@@ -313,7 +387,26 @@ export type Database = {
           postal_code: string | null
           profile_id: string | null
           role: string | null
+          status: string | null
           study_field: string | null
+        }
+        Relationships: []
+      }
+      my_offer_stats: {
+        Row: {
+          offer_id: string | null
+          open_requests: number | null
+          views_this_week: number | null
+        }
+        Insert: {
+          offer_id?: string | null
+          open_requests?: never
+          views_this_week?: never
+        }
+        Update: {
+          offer_id?: string | null
+          open_requests?: never
+          views_this_week?: never
         }
         Relationships: []
       }

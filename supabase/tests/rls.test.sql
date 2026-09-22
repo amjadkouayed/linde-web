@@ -19,7 +19,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(16);
+select plan(21);
 
 create function tests_as(p_user uuid) returns void
 language plpgsql
@@ -63,14 +63,14 @@ values ('00000000-0000-0000-0000-000000000000',
 
 select tests_as('99999999-9999-9999-9999-999999999999');
 select lives_ok(
-  $$insert into public.profiles (id, role, name) values
-    ('99999999-9999-9999-9999-999999999999', 'student', 'Neue Nutzerin')$$,
+  $$insert into public.profiles (id, role, name, birth_year) values
+    ('99999999-9999-9999-9999-999999999999', 'student', 'Neue Nutzerin', 2003)$$,
   'a new user can create their own profile'
 );
 
 select throws_ok(
-  $$insert into public.profiles (id, role, name) values
-    ('88888888-8888-8888-8888-888888888888', 'student', 'Gestohlen')$$,
+  $$insert into public.profiles (id, role, name, birth_year) values
+    ('88888888-8888-8888-8888-888888888888', 'student', 'Gestohlen', 2003)$$,
   -- Any error: the WITH CHECK and the foreign key both refuse this, and which
   -- fires first is not guaranteed.
   null, null,
@@ -215,6 +215,66 @@ select is(
      and read_at is null),
   1,
   'cannot mark your own message as read'
+);
+
+
+-- ---------------------------------------------------------------------------
+-- Profile fields
+-- ---------------------------------------------------------------------------
+
+-- "Rentner" is a senior's self-description; a student has no business carrying
+-- one, and the constraint rather than the UI is what guarantees it.
+select tests_as('11111111-1111-1111-1111-111111111111');
+select throws_ok(
+  $$update public.profiles set status = 'rentner'
+    where id = '11111111-1111-1111-1111-111111111111'$$,
+  '23514', null,
+  'a student cannot take a senior status'
+);
+
+
+-- ---------------------------------------------------------------------------
+-- Intro message
+-- ---------------------------------------------------------------------------
+
+-- Werner is the recipient of Lena's pending request, so the UPDATE policy lets
+-- him touch the row — but not to rewrite what she said to him.
+select tests_as('44444444-4444-4444-4444-444444444444');
+select throws_ok(
+  $$update public.connections set intro_message = 'Etwas ganz anderes'
+    where id = 'bbbbbbbb-0000-0000-0000-000000000002'$$,
+  '42501', null,
+  'a request greeting cannot be rewritten after the fact'
+);
+
+
+-- ---------------------------------------------------------------------------
+-- Offer views
+-- ---------------------------------------------------------------------------
+
+-- Werner viewing his own card would let him inflate his own numbers.
+select throws_ok(
+  $$insert into public.offer_views (offer_id, viewer_id)
+    select o.id, '44444444-4444-4444-4444-444444444444'
+    from public.offers o
+    where o.user_id = '44444444-4444-4444-4444-444444444444'$$,
+  '42501', null,
+  'cannot register a view on your own offer'
+);
+
+-- How often someone's card is looked at is theirs alone.
+select tests_as('11111111-1111-1111-1111-111111111111');
+select is(
+  (select count(*)::int from public.offer_views),
+  0,
+  'cannot read another user''s view log'
+);
+
+-- my_offer_stats is scoped to the caller by construction.
+select is(
+  (select count(*)::int from public.my_offer_stats),
+  1,
+  'offer stats only ever cover your own offer'
 );
 
 
