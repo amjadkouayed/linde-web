@@ -23,13 +23,27 @@ async function requireSession() {
   return { supabase, userId: user.id }
 }
 
-export async function sendConnectionRequest(recipientId: string): Promise<ActionResult> {
+/**
+ * The greeting rides on the request itself rather than being a message: the
+ * requests screen shows it before anything is accepted, and chat proper still
+ * requires both sides to agree. It is immutable once sent.
+ */
+export async function sendConnectionRequest(
+  recipientId: string,
+  introMessage?: string,
+): Promise<ActionResult> {
   const { supabase, userId } = await requireSession()
+
+  const intro = introMessage?.trim()
+  if (intro && intro.length > 500) {
+    return { error: 'Die Nachricht ist zu lang (max. 500 Zeichen).' }
+  }
 
   const { error } = await supabase.from('connections').insert({
     requester_id: userId,
     recipient_id: recipientId,
     status: 'pending',
+    intro_message: intro || null,
   })
 
   if (error) {

@@ -414,8 +414,11 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 
 # pg-delta is the schema diff engine for db diff / db pull / db remote commit.
 # Set enabled = false to fall back to the legacy migra engine.
+# Off: on CLI 2.109 this engine fails to find its own TLS certificate and spews
+# an ENOENT on every push and reset. The fallback (migra) works fine. Worth
+# re-enabling once the CLI is upgraded.
 [experimental.pgdelta]
-enabled = true
+enabled = false
 # Directory under `supabase/` where declarative files are written.
 # declarative_schema_path = "./schemas"
 # JSON string passed through to pg-delta SQL formatting. When omitted, SQL is

@@ -26,6 +26,7 @@ import type { Tables } from '@/lib/supabase/database.types'
 export type Profile = Tables<'profiles'>
 export type Offer = Tables<'offers'>
 export type DiscoverCard = Tables<'discover_feed'>
+export type OfferStats = Tables<'my_offer_stats'>
 
 /** The signed-in user's profile, or null if they have not onboarded yet. */
 export async function getCurrentProfile(): Promise<Profile | null> {
@@ -71,6 +72,16 @@ export async function getMyOffer(): Promise<Offer | null> {
     .eq('user_id', user.id)
     .maybeSingle()
 
+  return data
+}
+
+/** Views this week and open requests, for "Mein Angebot". */
+export async function getMyOfferStats(): Promise<OfferStats | null> {
+  const supabase = await createClient()
+
+  // The view is scoped to the caller by construction, so there is nothing to
+  // filter here and no way to ask for someone else's numbers.
+  const { data } = await supabase.from('my_offer_stats').select('*').maybeSingle()
   return data
 }
 

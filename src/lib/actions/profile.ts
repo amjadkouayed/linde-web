@@ -14,6 +14,13 @@ import { createClient } from '@/lib/supabase/server'
 export type ActionResult = { error: string | null }
 
 const ROLES = ['student', 'senior'] as const
+const SENIOR_STATUSES = ['rentner', 'rentnerin', 'berufstaetig'] as const
+
+// The database only bounds birth_year for sanity — anything involving the
+// current year is not immutable and cannot live in a CHECK without going stale.
+// The actual policy lives here.
+const MIN_AGE = 16
+const MAX_AGE = 120
 
 function parseInterests(raw: FormDataEntryValue | null): string[] {
   return String(raw ?? '')
@@ -41,11 +48,28 @@ export async function completeOnboarding(formData: FormData): Promise<ActionResu
     return { error: 'Bitte gib deinen Namen an.' }
   }
 
+  // The UI collects an age; we store the birth year, because an age column is
+  // silently wrong from the person's next birthday onwards.
+  const age = Number(formData.get('age'))
+  if (!Number.isInteger(age) || age < MIN_AGE || age > MAX_AGE) {
+    return { error: `Bitte gib ein Alter zwischen ${MIN_AGE} und ${MAX_AGE} an.` }
+  }
+  const birthYear = new Date().getFullYear() - age
+
+  // Only seniors carry one, and the database enforces that too.
+  const rawStatus = String(formData.get('status') ?? '')
+  const status =
+    role === 'senior' && SENIOR_STATUSES.includes(rawStatus as (typeof SENIOR_STATUSES)[number])
+      ? (rawStatus as (typeof SENIOR_STATUSES)[number])
+      : null
+
   // profiles.id IS the auth user id, so the row can only ever be the caller's.
   const { error } = await supabase.from('profiles').insert({
     id: user.id,
     role: role as (typeof ROLES)[number],
     name,
+    birth_year: birthYear,
+    status,
     bio: String(formData.get('bio') ?? '').trim() || null,
     interests: parseInterests(formData.get('interests')),
     study_field: role === 'student'
@@ -105,4 +129,25 @@ export async function updateMyCard(formData: FormData): Promise<ActionResult> {
   // edit up immediately rather than waiting out its 30s stale window.
   refresh()
   return { error: null }
+}
+
+/**
+ * Register that someone looked at an offer, for "34 Aufrufe diese Woche".
+ *
+ * The primary key is (offer_id, viewer_id, viewed_on), so a repeat view on the
+ * same day conflicts and is ignored rather than inflating the count. Viewing
+ * your own offer is refused by the policy, so a duplicate-key or RLS error here
+ * is expected and not worth surfacing to the reader of a profile.
+ */
+export async function recordOfferView(offerId: string): Promise<void> {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return
+
+  await supabase
+    .from('offer_views')
+    .insert({ offer_id: offerId, viewer_id: user.id })
 }
