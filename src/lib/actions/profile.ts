@@ -30,6 +30,16 @@ function parseInterests(raw: FormDataEntryValue | null): string[] {
     .slice(0, 20)
 }
 
+/**
+ * A photo path is only accepted from the caller's own storage folder. The
+ * database refuses anything else too (0010); checking here as well turns that
+ * into a clean "no photo" rather than a failed save.
+ */
+function ownAvatarPath(raw: FormDataEntryValue | null, userId: string): string | null {
+  const path = String(raw ?? '')
+  return path.startsWith(`${userId}/`) ? path : null
+}
+
 export async function completeOnboarding(formData: FormData): Promise<ActionResult> {
   const supabase = await createClient()
 
@@ -89,8 +99,12 @@ export async function completeOnboarding(formData: FormData): Promise<ActionResu
     study_field: role === 'student'
       ? String(formData.get('study_field') ?? '').trim() || null
       : null,
+    avatar_path: ownAvatarPath(formData.get('avatar_path'), user.id),
   })
 
+  // Already onboarded — a second tab, or the back button. Not an error worth
+  // showing; they belong in the app.
+  if (error?.code === '23505') redirect('/discover')
   if (error) return { error: error.message }
 
   refresh()
@@ -222,4 +236,83 @@ export async function signOut(): Promise<void> {
   const supabase = await createClient()
   await supabase.auth.signOut()
   redirect('/')
+}
+
+/**
+ * Set the profile photo, then delete the one it replaces. The bucket is public,
+ * so an old photo left behind would stay reachable by its URL indefinitely —
+ * "change my photo" has to mean the old one is gone.
+ */
+export async function updateMyAvatar(path: string): Promise<ActionResult> {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const next = ownAvatarPath(path, user.id)
+  if (!next) return { error: 'Das Foto konnte nicht gespeichert werden.' }
+
+  const { data: before } = await supabase.from('profiles').select('avatar_path').eq('id', user.id).maybeSingle()
+
+  const { error } = await supabase.from('profiles').update({ avatar_path: next }).eq('id', user.id)
+  if (error) return { error: error.message }
+
+  if (before?.avatar_path && before.avatar_path !== next) {
+    await supabase.storage.from('avatars').remove([before.avatar_path])
+  }
+
+  refresh()
+  return { error: null }
+}
+
+/** Remove the photo entirely — the file, not just the reference to it. */
+export async function removeMyAvatar(): Promise<ActionResult> {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: before } = await supabase.from('profiles').select('avatar_path').eq('id', user.id).maybeSingle()
+
+  const { error } = await supabase.from('profiles').update({ avatar_path: null }).eq('id', user.id)
+  if (error) return { error: error.message }
+
+  if (before?.avatar_path) await supabase.storage.from('avatars').remove([before.avatar_path])
+
+  refresh()
+  return { error: null }
+}
+
+/**
+ * Art. 17: delete the account and everything attached to it.
+ *
+ * Storage first, because the database cascade cannot reach it: every file in
+ * the caller's avatar folder, including any orphaned by an interrupted upload.
+ * Then delete_my_account(), which removes the auth user and cascades through
+ * profile, offer, connections, messages and view log.
+ */
+export async function deleteMyAccount(): Promise<ActionResult> {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: files } = await supabase.storage.from('avatars').list(user.id, { limit: 1000 })
+  if (files?.length) {
+    await supabase.storage.from('avatars').remove(files.map((f) => `${user.id}/${f.name}`))
+  }
+
+  const { error } = await supabase.rpc('delete_my_account')
+  if (error) return { error: 'Das Löschen hat nicht geklappt. Bitte versuchen Sie es noch einmal.' }
+
+  // The user no longer exists; clear the cookie so the browser does not keep
+  // presenting a session for someone who is gone.
+  await supabase.auth.signOut()
+  redirect('/?geloescht=1')
 }

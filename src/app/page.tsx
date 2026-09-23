@@ -1,15 +1,30 @@
 import Link from 'next/link'
+import { Suspense } from 'react'
 
+import { RedirectIfSignedIn } from '@/components/auth-redirect'
 import { LindeMark } from '@/components/linde-mark'
+
+// Only promise phone help once there is a number to ring.
+const PROMISES = ['Kostenlos', 'Kein Passwort nötig', ...(process.env.NEXT_PUBLIC_SUPPORT_PHONE ? ['Hilfe am Telefon'] : [])]
+
+type Search = Promise<{ [key: string]: string | string[] | undefined }>
 
 /**
  * One path in, for new and returning people alike: nobody has to work out
  * whether they already have an account. Static, so it loads instantly.
  */
-export default function Home() {
+export default function Home({ searchParams }: { searchParams: Search }) {
   return (
     <main className="mx-auto flex w-full max-w-[1080px] flex-grow flex-col justify-center gap-12 px-6 py-16 md:flex-row md:items-center md:gap-20">
+      <Suspense fallback={null}>
+        <RedirectIfSignedIn />
+      </Suspense>
+
       <div className="flex flex-col gap-7">
+        <Suspense fallback={null}>
+          <DeletedNotice searchParams={searchParams} />
+        </Suspense>
+
         <div className="flex items-center gap-3">
           <LindeMark size={48} />
           <span className="font-serif text-[30px] font-bold">Linde</span>
@@ -29,7 +44,7 @@ export default function Home() {
         </p>
 
         <ul className="flex flex-wrap gap-3">
-          {['Kostenlos', 'Kein Passwort nötig', 'Hilfe am Telefon'].map((label) => (
+          {PROMISES.map((label) => (
             <li
               key={label}
               className="rounded-full border border-line bg-tag px-4.5 py-2.5 text-[17px] font-bold"
@@ -54,5 +69,16 @@ export default function Home() {
         </p>
       </div>
     </main>
+  )
+}
+
+/** Closure after "Konto löschen": say plainly that it happened. */
+async function DeletedNotice({ searchParams }: { searchParams: Search }) {
+  const { geloescht } = await searchParams
+  if (geloescht !== '1') return null
+  return (
+    <p role="status" className="rounded-card border border-line bg-tag p-5 text-[19px] leading-relaxed">
+      Ihr Konto und alle Ihre Daten wurden gelöscht. Danke, dass Sie Linde ausprobiert haben.
+    </p>
   )
 }

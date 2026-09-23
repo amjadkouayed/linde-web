@@ -5,14 +5,10 @@ import { Avatar } from '@/components/avatar'
 import { ProfileSettings } from '@/components/profile/profile-settings'
 import { SiteNav } from '@/components/site-nav'
 import { requireProfile } from '@/lib/data/profiles'
+import { personLine } from '@/lib/labels'
 
 export const metadata = { title: 'Profil – Linde' }
 
-const STATUS_LABEL: Record<string, string> = {
-  rentner: 'Rentner',
-  rentnerin: 'Rentnerin',
-  berufstaetig: 'Noch berufstätig',
-}
 
 export default function ProfilPage() {
   return (
@@ -36,25 +32,18 @@ export default function ProfilPage() {
 
 async function Content() {
   const profile = await requireProfile()
-  const age = profile.birth_year ? new Date().getFullYear() - profile.birth_year : null
-  const detail =
-    profile.role === 'student' ? profile.study_field : STATUS_LABEL[profile.status ?? '']
+  const age = new Date().getFullYear() - profile.birth_year
 
   return (
     <div className="flex flex-col gap-7">
       <section className="flex flex-col gap-4 rounded-card border border-line bg-raised p-5">
         <div className="flex items-center gap-4">
-          <Avatar name={profile.name} size={80} />
+          <Avatar name={profile.name} path={profile.avatar_path} size={80} />
           <div className="flex flex-col gap-1">
             <span className="font-serif text-[25px] font-semibold">{profile.name}</span>
             <span className="text-[17px] text-muted">
-              {[
-                profile.role === 'student' ? 'Studierende:r' : 'Senior:in',
-                age ? `${age} Jahre` : null,
-                detail,
-              ]
-                .filter(Boolean)
-                .join(' · ')}
+              {profile.role === 'student' ? 'Studierende:r' : 'Senior:in'} ·{' '}
+              {personLine({ age, role: profile.role, studyField: profile.study_field, status: profile.status })}
             </span>
           </div>
         </div>
@@ -72,7 +61,12 @@ async function Content() {
         )}
       </section>
 
-      <ProfileSettings postalCode={profile.postal_code} city={profile.city} />
+      <ProfileSettings
+        name={profile.name}
+        avatarPath={profile.avatar_path}
+        postalCode={profile.postal_code}
+        city={profile.city}
+      />
 
       <nav className="flex flex-wrap gap-5 border-t border-line pt-6 text-[17px]">
         <Link href="/datenschutz" className="underline">

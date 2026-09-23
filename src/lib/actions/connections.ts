@@ -5,6 +5,8 @@ import { redirect } from 'next/navigation'
 
 import { createClient } from '@/lib/supabase/server'
 
+import type { Message } from '@/lib/data/connections'
+
 import type { ActionResult } from './profile'
 
 /**
@@ -87,24 +89,32 @@ export async function withdrawConnectionRequest(connectionId: string): Promise<A
   return { error: null }
 }
 
-export async function sendMessage(connectionId: string, body: string): Promise<ActionResult> {
+/**
+ * Returns the stored message so the sender's screen shows it immediately.
+ * Waiting for Realtime to echo your own message back is fragile — if the
+ * socket is late or down, what you just wrote silently fails to appear.
+ * Realtime is for the other person's messages.
+ */
+export async function sendMessage(
+  connectionId: string,
+  body: string,
+): Promise<ActionResult & { message?: Message }> {
   const { supabase, userId } = await requireSession()
 
   const trimmed = body.trim()
   if (!trimmed) return { error: 'Die Nachricht ist leer.' }
   if (trimmed.length > 2000) return { error: 'Die Nachricht ist zu lang (max. 2000 Zeichen).' }
 
-  const { error } = await supabase.from('messages').insert({
-    connection_id: connectionId,
-    sender_id: userId,
-    body: trimmed,
-  })
+  const { data, error } = await supabase
+    .from('messages')
+    .insert({ connection_id: connectionId, sender_id: userId, body: trimmed })
+    .select()
+    .single()
 
   if (error) return { error: error.message }
 
-  // Realtime delivers the message to the other side; refresh updates this one.
   refresh()
-  return { error: null }
+  return { error: null, message: data }
 }
 
 /**

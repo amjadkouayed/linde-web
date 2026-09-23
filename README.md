@@ -52,13 +52,19 @@ appear here: it bypasses RLS, and would turn a public key into a public database
 `.env.example` holds variable *names* with empty values and nothing else. If you add a variable,
 add its name there so the next person knows it exists.
 
-### Email (Resend)
+### Email — the one thing production cannot do without
 
-SMTP is configured for Resend in `config.toml` but **disabled locally** — mail goes to Mailpit on
-<http://localhost:54324> instead, so the demo accounts work without an inbox. For the cloud
-project, set SMTP in the Supabase dashboard rather than in this file: host `smtp.resend.com`,
-port `587`, username `resend`, password = the Resend API key. Resend needs the sending domain
-verified before it will deliver to real addresses.
+Sign-in **is** an email: the app mails a six-digit code and the person types it. Supabase's
+built-in sender cannot carry that on the free tier, for three independent reasons:
+
+- **Templates are locked.** The default template holds only a link, never the code, and the
+  Management API refuses to change it (`400: Email template modification is not available for
+  free tier projects using the default email provider`).
+- **Two emails an hour.** The third person to sign in within an hour gets nothing.
+- **It only delivers to members of the Supabase organisation**, not to the public.
+
+So production needs custom SMTP. Locally none of this applies — mail goes to Mailpit on
+<http://localhost:54324>. See **Deploying → Email** below for the setup.
 
 ## Architecture
 
@@ -93,8 +99,9 @@ searched Stuttgart.
 
 ### Location, and why there are no addresses
 
-`offers` stores `postal_code`, `city` and a `lat`/`lng` **centroid of the postal code — never a
-street address**. `discover_feed` does not select the coordinates at all.
+`profiles` stores `postal_code`, `city` and a `lat`/`lng` **centroid of the postal code — never a
+street address** (it moved off `offers` in `0005`, since the Discover filter needs a location before
+anyone has written a card). `discover()` returns a rounded distance, never the coordinates.
 
 This is deliberate and worth not undoing. A radius filter is trilaterable: probe it from three
 positions and you recover whatever is stored. Because what's stored is a postal-code centroid, the
@@ -160,25 +167,64 @@ Clients subscribe to `postgres_changes` on `messages` filtered by `connection_id
 per subscriber. **Call `supabase.realtime.setAuth()` when the token refreshes** or the channel
 silently stops delivering after an hour.
 
-## Cloud
+## Deploying
 
-The project is linked and these migrations are **already deployed**. To promote a new one:
+Three pieces, each deployed differently.
+
+### Web — Vercel
+
+`main` deploys automatically to <https://linde-web-wine.vercel.app>. Environment variables in the
+Vercel project:
+
+| Variable | Value |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://prufsrctzkilvhmatymd.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | the project's **publishable** key (`sb_publishable_…`) |
+| `NEXT_PUBLIC_SUPPORT_PHONE` | optional — shows a phone help line on login and the welcome page |
+
+Never the secret / service-role key — nothing in this app needs it, and it bypasses RLS.
+
+### Database — Supabase migrations
 
 ```bash
-supabase db push
+supabase db push          # applies anything in supabase/migrations not yet on the project
+supabase migration list   # local and remote columns must match afterwards
 ```
 
 **The dashboard is not the source of truth.** Schema written there is invisible to review, never
-reaches the generated types the mobile app depends on, and is silently destroyed by the next
-`db push`. Every schema change belongs in `supabase/migrations`. If you need to explore in the
-dashboard, fine — but write the result as a migration before anyone builds on it.
+reaches the generated types the mobile app depends on, and is silently destroyed by the next push.
+Every change belongs in `supabase/migrations`.
 
 The cloud database is deliberately **not seeded**: `seed.sql` is committed to a public repo, so
-seeding it would put five accounts with a published password on the internet. Sign up through the
-app instead. Demo accounts exist locally only.
+seeding it would put five accounts with a published password on the internet.
 
-Before real use, turn on email confirmations (`[auth.email] enable_confirmations`) — it is off
-locally so the demo logins work without an inbox.
+### Auth settings — dashboard only, never `supabase config push`
+
+Production auth lives in the Supabase dashboard. `config.toml` describes local development and
+nothing else; `supabase config push` would overwrite the entire live auth block with local values
+and break sign-in for everyone.
+
+Current production values (set 23 Sep 2026): Site URL `https://linde-web-wine.vercel.app`, redirect
+allow-list `https://linde-web-wine.vercel.app/**`, OTP length **6**.
+
+### Email — custom SMTP, then the templates
+
+1. **Authentication → Emails → SMTP Settings** in the dashboard: enable custom SMTP. Enter the
+   password there yourself; it never goes in this repo.
+   - **Resend** (needs a domain you own, verified under Resend → Domains): host `smtp.resend.com`,
+     port `587`, user `resend`, password = API key, sender `noreply@<your-domain>`.
+   - **Gmail** (no domain needed): 2-step verification on, then an app password; host
+     `smtp.gmail.com`, port `587`, user and sender = the Gmail address.
+2. Only once SMTP is on, the templates can be set. Paste `supabase/templates/magic_link.html` and
+   `confirmation.html` (without their leading `<!-- -->` comment) into **Authentication → Emails →
+   Templates**, with the subjects from `config.toml`. Both show the code and contain no link.
+3. **Authentication → Rate Limits**: raise *emails sent per hour* from 2 (e.g. 60).
+4. Sign in on the live site with a real address to confirm the code arrives.
+
+### After every deploy
+
+- `supabase migration list` — local and remote in sync
+- the live site: sign in, onboard, publish a card, request, accept, chat both ways
 
 ## Sharing the schema with `linde-mobile`
 

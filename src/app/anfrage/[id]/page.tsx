@@ -37,7 +37,7 @@ async function Request({ params }: { params: Params }) {
       {card.offer_id && <RecordView offerId={card.offer_id} />}
 
       <div className="flex items-center gap-4">
-        <Avatar name={card.name} size={64} />
+        <Avatar name={card.name} path={card.avatar_path} size={64} />
         <h1 className="font-serif text-[28px] font-bold">Anfrage an {firstName}</h1>
       </div>
 

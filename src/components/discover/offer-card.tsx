@@ -2,6 +2,7 @@ import Link from 'next/link'
 
 import { Avatar } from '@/components/avatar'
 import type { NearbyCard } from '@/lib/data/profiles'
+import { personLine } from '@/lib/labels'
 
 /**
  * Never "0 km" — someone in the same postal code is not zero metres away, and
@@ -13,11 +14,6 @@ function distanceLabel(km: number | null): string | null {
   return km < 1 ? 'ganz in der Nähe' : `ca. ${km} km`
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  rentner: 'Rentner',
-  rentnerin: 'Rentnerin',
-  berufstaetig: 'Noch berufstätig',
-}
 
 /**
  * Card anatomy, from the design:
@@ -27,13 +23,13 @@ const STATUS_LABEL: Record<string, string> = {
  */
 export function OfferCard({ card }: { card: NearbyCard }) {
   const firstName = (card.name ?? '').split(' ')[0] || 'diese Person'
-  const detail = card.role === 'student' ? card.study_field : STATUS_LABEL[card.status ?? '']
+  const line = personLine({ age: card.age, role: card.role, studyField: card.study_field, status: card.status })
   const distance = distanceLabel(card.km)
 
   return (
     <article className="flex flex-col gap-3.5 rounded-card border border-line bg-raised p-5">
       <div className="flex items-start gap-4">
-        <Avatar name={card.name} size={80} />
+        <Avatar name={card.name} path={card.avatar_path} size={80} />
 
         <div className="flex min-w-0 flex-grow flex-col gap-1.5">
           <div className="flex items-baseline justify-between gap-3">
@@ -46,7 +42,9 @@ export function OfferCard({ card }: { card: NearbyCard }) {
             )}
           </div>
 
-          {detail && <span className="text-[16px] text-muted">{detail}</span>}
+          {/* Handoff rule: age sits underneath the name, smaller and muted —
+              never beside it. It shares the line with study field / status. */}
+          {line && <span className="text-[16px] text-muted">{line}</span>}
           {card.bio && <p className="text-pretty text-[18px] leading-relaxed">{card.bio}</p>}
         </div>
       </div>
@@ -55,8 +53,7 @@ export function OfferCard({ card }: { card: NearbyCard }) {
         <p className="text-pretty text-[18px] leading-relaxed">{card.description}</p>
       )}
 
-      <ul aria-label="Alter, Verfügbarkeit und Interessen" className="flex flex-wrap gap-2">
-        {card.age != null && <Fact>{card.age} Jahre</Fact>}
+      <ul aria-label="Verfügbarkeit und Interessen" className="flex flex-wrap gap-2">
         {card.availability && <Fact>{card.availability}</Fact>}
         {(card.interests ?? []).map((interest) => (
           <li

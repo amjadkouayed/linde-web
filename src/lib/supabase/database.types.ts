@@ -433,6 +433,7 @@ export type Database = {
       }
     }
     Functions: {
+      delete_my_account: { Args: never; Returns: undefined }
       discover: {
         Args: { radius_km: number; search_plz: string }
         Returns: {
