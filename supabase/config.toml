@@ -155,11 +155,18 @@ max_indexes = 5
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
-site_url = "http://127.0.0.1:3000"
+# Production. This file is the source of truth for the linked project via
+# `supabase config push`, so it holds the real domain rather than localhost;
+# local development still works because the dev origins are allow-listed below.
+site_url = "https://linde-web-wine.vercel.app"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+additional_redirect_urls = [
+  "https://linde-web-wine.vercel.app/**",
+  "http://127.0.0.1:3000/**",
+  "http://localhost:3000/**",
+]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
@@ -236,13 +243,15 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
-# Resend. Disabled locally — mail goes to Mailpit on http://localhost:54324
-# instead, so the demo accounts work without an inbox. Set enabled = true only
-# where real delivery is wanted.
+# Off, so Supabase's own sender delivers the codes — that is the decision, and
+# locally mail goes to Mailpit on http://localhost:54324 either way.
 #
-# The key is read from the environment and must NEVER be written into this file:
-# this repo is public. Put RESEND_API_KEY in .env (gitignored) locally, and set
-# SMTP in the Supabase dashboard for the cloud project.
+# Know the ceiling: the built-in sender is heavily rate limited (a handful of
+# messages per hour) and Supabase documents it as unsuitable for production.
+# Since signing in IS an email here, that limit is the front door. If sign-ins
+# start failing silently under load, this block is the first thing to turn on —
+# the key is read from the environment and must never be written into this file,
+# because the repo is public.
 [auth.email.smtp]
 enabled = false
 host = "smtp.resend.com"
