@@ -4,13 +4,8 @@ import { Suspense } from 'react'
 import { SiteNav } from '@/components/site-nav'
 import { LocationFilter } from '@/components/discover/location-filter'
 import { OfferCard } from '@/components/discover/offer-card'
-import {
-  DEFAULT_RADIUS,
-  RADIUS_OPTIONS,
-  lookupPostalCode,
-  requireProfile,
-  searchNearby,
-} from '@/lib/data/profiles'
+import { lookupPostalCode, requireProfile, searchNearby } from '@/lib/data/profiles'
+import { RADIUS_OPTIONS, parseRadius } from '@/lib/discover'
 
 type Search = Promise<{ [key: string]: string | string[] | undefined }>
 
@@ -42,10 +37,7 @@ async function Feed({ searchParams }: { searchParams: Search }) {
   const profile = await requireProfile()
 
   const postalCode = typeof plz === 'string' && /^\d{5}$/.test(plz) ? plz : profile.postal_code
-  const requested = Number(umkreis)
-  const radius = RADIUS_OPTIONS.includes(requested as (typeof RADIUS_OPTIONS)[number])
-    ? requested
-    : DEFAULT_RADIUS
+  const radius = parseRadius(umkreis)
 
   // Tells "we do not know that postal code" apart from "nobody lives there yet".
   // Those need different messages: one is a typo, the other is not their fault.

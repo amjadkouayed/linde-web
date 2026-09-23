@@ -30,10 +30,6 @@ export type OfferStats = Tables<'my_offer_stats'>
 /** A discover card with an approximate distance attached. */
 export type NearbyCard = Database['public']['Functions']['discover']['Returns'][number]
 
-/** The radius choices the design offers, in km. */
-export const RADIUS_OPTIONS = [5, 10, 25, 50, 100] as const
-export const DEFAULT_RADIUS = 25
-
 /** The signed-in user's profile, or null if they have not onboarded yet. */
 export async function getCurrentProfile(): Promise<Profile | null> {
   'use cache: private'
@@ -134,17 +130,17 @@ export async function getMyOfferStats(): Promise<OfferStats | null> {
  * role that the caller has no connection with, and deliberately does not expose
  * coordinates.
  */
-export async function getDiscoverFeed(interests?: string[]): Promise<DiscoverCard[]> {
+export async function getDiscoverCard(profileId: string): Promise<DiscoverCard | null> {
   const supabase = await createClient()
 
-  let query = supabase.from('discover_feed').select('*')
-  if (interests?.length) {
-    // Uses the GIN index on profiles.interests.
-    query = query.overlaps('interests', interests)
-  }
+  // Reading the person out of the feed rather than from profiles keeps one rule
+  // in one place: if they are not in your feed, you may not ask them. The view
+  // does that filtering, so an ineligible id simply comes back empty.
+  const { data } = await supabase
+    .from('discover_feed')
+    .select('*')
+    .eq('profile_id', profileId)
+    .maybeSingle()
 
-  const { data, error } = await query.order('created_at', { ascending: false })
-  if (error) throw error
-
-  return data ?? []
+  return data
 }
