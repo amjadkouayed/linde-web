@@ -179,6 +179,50 @@ export async function updateMyLocation(formData: FormData): Promise<ActionResult
  * is expected and not worth surfacing to the reader of a profile.
  */
 /**
+ * Edit the profile itself. Role is deliberately absent: it is chosen once at
+ * onboarding and decides who you see, so changing it later would strand your
+ * existing connections on the wrong side of the app.
+ */
+export async function updateMyProfile(formData: FormData): Promise<ActionResult> {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const name = String(formData.get('name') ?? '').trim()
+  if (!name) return { error: 'Bitte gib deinen Namen an.' }
+
+  const age = Number(formData.get('age'))
+  if (!Number.isInteger(age) || age < MIN_AGE || age > MAX_AGE) {
+    return { error: `Bitte gib ein Alter zwischen ${MIN_AGE} und ${MAX_AGE} an.` }
+  }
+
+  const rawStatus = String(formData.get('status') ?? '')
+  const status = SENIOR_STATUSES.includes(rawStatus as (typeof SENIOR_STATUSES)[number])
+    ? (rawStatus as (typeof SENIOR_STATUSES)[number])
+    : null
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      name,
+      birth_year: new Date().getFullYear() - age,
+      bio: String(formData.get('bio') ?? '').trim() || null,
+      interests: parseInterests(formData.get('interests')),
+      study_field: String(formData.get('study_field') ?? '').trim() || null,
+      ...(status ? { status } : {}),
+    })
+    .eq('id', user.id)
+
+  if (error) return { error: error.message }
+
+  refresh()
+  return { error: null }
+}
+
+/**
  * Delete the caller's own card. RLS scopes the statement to their row, so the
  * .eq() is intent rather than protection. The screen confirms first: deleting
  * removes them from everyone's Discover, which is not obvious from the word.
