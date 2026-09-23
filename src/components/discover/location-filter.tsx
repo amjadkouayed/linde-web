@@ -10,9 +10,8 @@ import { RADIUS_OPTIONS } from '@/lib/discover'
  * audience already knows. State lives in the URL so a search can be shared,
  * reloaded and used by the server component that reads it.
  *
- * The radius is not wired to the query yet: profiles.lat/lng are empty until
- * the postal_codes table lands, so the feed currently matches the postal code
- * exactly. The control ships now because the layout depends on it.
+ * Both values drive the real query: searchNearby() measures from the centre of
+ * the entered postal code out to the chosen radius (0007_location_search).
  */
 export function LocationFilter({
   defaultPostalCode,
