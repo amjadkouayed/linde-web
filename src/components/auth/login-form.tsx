@@ -8,13 +8,22 @@ import { LindeMark } from '@/components/site-nav'
 import { createClient } from '@/lib/supabase/client'
 
 /**
- * Passwordless: an e-mail address, then a 6-digit code. No password to invent,
- * forget or reset — which is the single biggest drop-off for older users.
+ * Passwordless: an e-mail address, then the code from that e-mail. No password
+ * to invent, forget or reset — the single biggest drop-off for older users.
  *
  * Google sits behind a flag until the provider is configured in Supabase: a
  * button that fails is worse than no button.
  */
 const GOOGLE_ENABLED = false
+
+/**
+ * The code length is a server setting (auth.email.otp_length), not something
+ * this form gets to decide. It was 8 in the cloud project while this input
+ * capped at 6, so every verification failed with a code the user had typed
+ * correctly. Accept the whole supported range and let Supabase judge it.
+ */
+const MIN_CODE_LENGTH = 6
+const MAX_CODE_LENGTH = 10
 
 export function LoginForm() {
   const router = useRouter()
@@ -129,16 +138,18 @@ export function LoginForm() {
 
           <div className="flex flex-col gap-2">
             <label htmlFor="code" className="text-[17px] font-bold">
-              6-stelliger Code
+              Code aus der E-Mail
             </label>
             <input
               id="code"
               inputMode="numeric"
               autoComplete="one-time-code"
-              maxLength={6}
+              maxLength={MAX_CODE_LENGTH}
               required
               value={code}
-              onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+              onChange={(event) =>
+                setCode(event.target.value.replace(/\D/g, '').slice(0, MAX_CODE_LENGTH))
+              }
               className="rounded-input border-2 border-control bg-raised px-4 py-4 text-center font-serif text-[32px] font-bold tracking-[0.3em] focus:border-brand focus:outline-none"
             />
           </div>
@@ -152,7 +163,7 @@ export function LoginForm() {
 
           <button
             type="submit"
-            disabled={pending || code.length < 6}
+            disabled={pending || code.length < MIN_CODE_LENGTH}
             className="press min-h-[62px] rounded-button bg-brand text-[20px] font-bold text-surface disabled:opacity-60"
           >
             {pending ? 'Wird geprüft …' : 'Weiter'}
