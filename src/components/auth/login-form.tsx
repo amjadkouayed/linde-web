@@ -7,23 +7,26 @@ import { useState, useTransition } from 'react'
 import { LindeMark } from '@/components/linde-mark'
 import { createClient } from '@/lib/supabase/client'
 
-// How long the mailed code is depends on Supabase's auth.otp_length, which the
-// client cannot read. Accepting a range keeps the form correct whichever value
-// the project is set to.
-const OTP_MIN_LENGTH = 6
-const OTP_MAX_LENGTH = 8
-
 // Set NEXT_PUBLIC_SUPPORT_PHONE to show the telephone help line.
 const SUPPORT_PHONE = process.env.NEXT_PUBLIC_SUPPORT_PHONE
 
 /**
- * Passwordless: an e-mail address, then a code from the inbox. No password to
- * invent, forget or reset — the single biggest drop-off for older users.
+ * Passwordless: an e-mail address, then the code from that e-mail. No password
+ * to invent, forget or reset — the single biggest drop-off for older users.
  *
  * Google sits behind a flag until the provider is configured in Supabase: a
  * button that fails is worse than no button.
  */
 const GOOGLE_ENABLED = false
+
+/**
+ * The code length is a server setting (auth.email.otp_length), not something
+ * this form gets to decide. It was 8 in the cloud project while this input
+ * capped at 6, so every verification failed with a code the user had typed
+ * correctly. Accept the whole supported range and let Supabase judge it.
+ */
+const MIN_CODE_LENGTH = 6
+const MAX_CODE_LENGTH = 10
 
 export function LoginForm() {
   const router = useRouter()
@@ -140,23 +143,15 @@ export function LoginForm() {
             <label htmlFor="code" className="text-[17px] font-bold">
               Code aus der E-Mail
             </label>
-            {/*
-              Accepts 6 to 8 digits rather than exactly 6. The code length is a
-              server setting (auth.otp_length), and a form that hard-caps at 6
-              cannot accept an 8-digit code at all — the field silently refuses
-              the last two characters and sign-in fails with no way to tell why.
-              Tolerating the range means the form is correct under either
-              setting instead of coupling the UI to a value it cannot see.
-            */}
             <input
               id="code"
               inputMode="numeric"
               autoComplete="one-time-code"
-              maxLength={OTP_MAX_LENGTH}
+              maxLength={MAX_CODE_LENGTH}
               required
               value={code}
               onChange={(event) =>
-                setCode(event.target.value.replace(/\D/g, '').slice(0, OTP_MAX_LENGTH))
+                setCode(event.target.value.replace(/\D/g, '').slice(0, MAX_CODE_LENGTH))
               }
               className="rounded-input border-2 border-control bg-raised px-4 py-4 text-center font-serif text-[32px] font-bold tracking-[0.3em] focus:border-brand focus:outline-none"
             />
@@ -171,7 +166,7 @@ export function LoginForm() {
 
           <button
             type="submit"
-            disabled={pending || code.length < OTP_MIN_LENGTH}
+            disabled={pending || code.length < MIN_CODE_LENGTH}
             className="press min-h-[62px] rounded-button bg-brand text-[20px] font-bold text-surface disabled:opacity-60"
           >
             {pending ? 'Wird geprüft …' : 'Weiter'}

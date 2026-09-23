@@ -155,18 +155,21 @@ max_indexes = 5
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
-# Production. This file is the source of truth for the linked project via
-# `supabase config push`, so it holds the real domain rather than localhost;
-# local development still works because the dev origins are allow-listed below.
-site_url = "https://linde-web-wine.vercel.app"
+# ---------------------------------------------------------------------------
+# DO NOT RUN `supabase config push`.
+#
+# Production auth is configured in the Supabase dashboard and this file does not
+# describe it. A push overwrites the whole [auth] block, so it would replace the
+# live settings with the local ones below and break sign-in for everyone.
+#
+# These values are the LOCAL development truth only. Change production in the
+# dashboard; mirror it here in a comment if it matters.
+# ---------------------------------------------------------------------------
+site_url = "http://127.0.0.1:3000"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = [
-  "https://linde-web-wine.vercel.app/**",
-  "http://127.0.0.1:3000/**",
-  "http://localhost:3000/**",
-]
+additional_redirect_urls = ["http://127.0.0.1:3000/**", "http://localhost:3000/**"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
