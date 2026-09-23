@@ -1,9 +1,16 @@
+import Link from 'next/link'
 import { Suspense } from 'react'
 
 import { SiteNav } from '@/components/site-nav'
 import { LocationFilter } from '@/components/discover/location-filter'
 import { OfferCard } from '@/components/discover/offer-card'
-import { getDiscoverFeed, requireProfile } from '@/lib/data/profiles'
+import {
+  DEFAULT_RADIUS,
+  RADIUS_OPTIONS,
+  lookupPostalCode,
+  requireProfile,
+  searchNearby,
+} from '@/lib/data/profiles'
 
 type Search = Promise<{ [key: string]: string | string[] | undefined }>
 
@@ -31,14 +38,32 @@ export default function DiscoverPage({ searchParams }: { searchParams: Search })
 }
 
 async function Feed({ searchParams }: { searchParams: Search }) {
-  const { plz } = await searchParams
+  const { plz, umkreis } = await searchParams
   const profile = await requireProfile()
-  const feed = await getDiscoverFeed()
 
-  // Until the postal_codes table and the radius query land, "near me" means the
-  // same postal code. This is the one line that changes when they arrive.
   const postalCode = typeof plz === 'string' && /^\d{5}$/.test(plz) ? plz : profile.postal_code
-  const cards = feed.filter((card) => card.postal_code === postalCode)
+  const requested = Number(umkreis)
+  const radius = RADIUS_OPTIONS.includes(requested as (typeof RADIUS_OPTIONS)[number])
+    ? requested
+    : DEFAULT_RADIUS
+
+  // Tells "we do not know that postal code" apart from "nobody lives there yet".
+  // Those need different messages: one is a typo, the other is not their fault.
+  const area = await lookupPostalCode(postalCode)
+  if (!area) {
+    return (
+      <div className="flex flex-col gap-6">
+        <LocationFilter defaultPostalCode={postalCode} resultCount={0} />
+        <p role="alert" className="rounded-card border border-line bg-raised p-8 text-[19px] leading-relaxed">
+          Diese Postleitzahl kennen wir nicht. Bitte prüfen Sie die fünf Ziffern.
+        </p>
+      </div>
+    )
+  }
+
+  const cards = await searchNearby(postalCode, radius)
+  // An empty list is a dead end; the next radius up is a way forward.
+  const widerRadius = RADIUS_OPTIONS.find((option) => option > radius)
 
   return (
     <div className="flex flex-col gap-6">
@@ -51,10 +76,19 @@ async function Feed({ searchParams }: { searchParams: Search }) {
       <LocationFilter defaultPostalCode={postalCode} resultCount={cards.length} />
 
       {cards.length === 0 ? (
-        <p className="rounded-card border border-line bg-raised p-8 text-[19px] leading-relaxed">
-          Hier ist gerade niemand. Versuchen Sie einen größeren Umkreis, oder schauen Sie später
-          noch einmal vorbei — es kommen laufend neue Menschen dazu.
-        </p>
+        <div className="flex flex-col items-start gap-4 rounded-card border border-line bg-raised p-8">
+          <p className="text-[19px] leading-relaxed">
+            Im Umkreis von {radius} km um {area.city} ist gerade niemand.
+          </p>
+          {widerRadius && (
+            <Link
+              href={`/discover?plz=${postalCode}&umkreis=${widerRadius}`}
+              className="press flex min-h-[56px] items-center justify-center rounded-button bg-brand px-6 text-[19px] font-bold text-surface no-underline"
+            >
+              Im Umkreis von {widerRadius} km suchen
+            </Link>
+          )}
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           {cards.map((card) => (

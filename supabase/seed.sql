@@ -12,16 +12,24 @@
 -- Everything here is plain set-based SQL: the CLI's seed runner batches
 -- statements, and a dollar-quoted function body breaks it.
 
+-- The token columns must be empty strings, not NULL. GoTrue scans them into a
+-- Go string and a NULL there fails the whole query with "Database error
+-- querying schema" — which looks like a configuration problem and is actually
+-- just this. Every password sign-in breaks until they are set.
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
   email_confirmed_at, created_at, updated_at,
-  raw_app_meta_data, raw_user_meta_data
+  raw_app_meta_data, raw_user_meta_data,
+  confirmation_token, recovery_token,
+  email_change, email_change_token_new, email_change_token_current,
+  phone_change, phone_change_token, reauthentication_token
 )
 select
   '00000000-0000-0000-0000-000000000000', u.id, 'authenticated', 'authenticated', u.email,
   extensions.crypt('linde1234', extensions.gen_salt('bf')),
   now(), now(), now(),
-  '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb
+  '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb,
+  '', '', '', '', '', '', '', ''
 from (values
   ('11111111-1111-1111-1111-111111111111'::uuid, 'lena@linde.test'),
   ('22222222-2222-2222-2222-222222222222'::uuid, 'tariq@linde.test'),

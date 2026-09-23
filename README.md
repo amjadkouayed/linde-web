@@ -71,6 +71,26 @@ Four tables: `profiles` (the person), `offers` ("Meine Karte" — what they post
 enforced by `unique (user_id)`), `connections`, and `messages`. Keeping the offer separate from the
 person is what gives location somewhere natural to live.
 
+### Distance search
+
+One database function, `discover(search_plz, radius_km)`, does the whole query: role, published,
+not-already-connected, and the distance maths. Web and mobile call the same thing, so neither app
+contains distance arithmetic and the two cannot drift apart.
+
+It uses `cube` + `earthdistance` rather than PostGIS — one question, a few lines, a GiST index —
+and resolves a postal code to a point from `postal_codes`, a table we ship. No geocoding service:
+no API key, no rate limit, and nothing that can fail on the day of the presentation.
+
+`postal_codes` is German postal code data from **[GeoNames](https://www.geonames.org/), licensed
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)** — attribution is required, so keep this
+credit and the one in the legal notice. It lives in a migration rather than `seed.sql` because the
+app needs it in production, and `seed.sql` never runs against the live database.
+
+Codes with several villages are collapsed to the mean of their points, which is why distances are
+approximate and the UI says "ca. 3 km". Bulk-mail codes belonging to single companies are excluded:
+nobody lives at one, and GeoNames points them at the administering city, so `10875` would have
+searched Stuttgart.
+
 ### Location, and why there are no addresses
 
 `offers` stores `postal_code`, `city` and a `lat`/`lng` **centroid of the postal code — never a
@@ -116,7 +136,10 @@ Fetching a list and then looping for related rows is the thing these exist to pr
 This is **not** the Next.js most tutorials describe. The bundled docs in `node_modules/next/dist/docs/`
 are the authority.
 
-- `middleware.ts` is now **`proxy.ts`**, exporting `proxy`. Node runtime, not configurable.
+- `middleware.ts` is now **`proxy.ts`**, exporting `proxy`. Node runtime, not configurable. It must
+  sit **beside `app/`** — so `src/proxy.ts` here, not the repo root. In the wrong place it does not
+  run and nothing tells you: pages still render, and the only symptom is that sessions quietly stop
+  refreshing an hour in.
 - `cookies()`, `headers()`, `params` and `searchParams` are **async**.
 - `revalidateTag` takes a **required** second argument; `updateTag` and `refresh` are new.
 - `dynamic`, `revalidate` and `fetchCache` segment exports no longer exist under Cache Components.
