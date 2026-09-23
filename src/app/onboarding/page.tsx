@@ -1,5 +1,5 @@
 import { OnboardingForm } from '@/components/onboarding/onboarding-form'
-import { LindeMark } from '@/components/site-nav'
+import { LindeMark } from '@/components/linde-mark'
 
 /**
  * No navigation on this screen on purpose: until there is a profile there is

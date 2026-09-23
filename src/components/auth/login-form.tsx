@@ -4,12 +4,21 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, useTransition } from 'react'
 
-import { LindeMark } from '@/components/site-nav'
+import { LindeMark } from '@/components/linde-mark'
 import { createClient } from '@/lib/supabase/client'
 
+// How long the mailed code is depends on Supabase's auth.otp_length, which the
+// client cannot read. Accepting a range keeps the form correct whichever value
+// the project is set to.
+const OTP_MIN_LENGTH = 6
+const OTP_MAX_LENGTH = 8
+
+// Set NEXT_PUBLIC_SUPPORT_PHONE to show the telephone help line.
+const SUPPORT_PHONE = process.env.NEXT_PUBLIC_SUPPORT_PHONE
+
 /**
- * Passwordless: an e-mail address, then a 6-digit code. No password to invent,
- * forget or reset — which is the single biggest drop-off for older users.
+ * Passwordless: an e-mail address, then a code from the inbox. No password to
+ * invent, forget or reset — the single biggest drop-off for older users.
  *
  * Google sits behind a flag until the provider is configured in Supabase: a
  * button that fails is worse than no button.
@@ -129,16 +138,26 @@ export function LoginForm() {
 
           <div className="flex flex-col gap-2">
             <label htmlFor="code" className="text-[17px] font-bold">
-              6-stelliger Code
+              Code aus der E-Mail
             </label>
+            {/*
+              Accepts 6 to 8 digits rather than exactly 6. The code length is a
+              server setting (auth.otp_length), and a form that hard-caps at 6
+              cannot accept an 8-digit code at all — the field silently refuses
+              the last two characters and sign-in fails with no way to tell why.
+              Tolerating the range means the form is correct under either
+              setting instead of coupling the UI to a value it cannot see.
+            */}
             <input
               id="code"
               inputMode="numeric"
               autoComplete="one-time-code"
-              maxLength={6}
+              maxLength={OTP_MAX_LENGTH}
               required
               value={code}
-              onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+              onChange={(event) =>
+                setCode(event.target.value.replace(/\D/g, '').slice(0, OTP_MAX_LENGTH))
+              }
               className="rounded-input border-2 border-control bg-raised px-4 py-4 text-center font-serif text-[32px] font-bold tracking-[0.3em] focus:border-brand focus:outline-none"
             />
           </div>
@@ -152,7 +171,7 @@ export function LoginForm() {
 
           <button
             type="submit"
-            disabled={pending || code.length < 6}
+            disabled={pending || code.length < OTP_MIN_LENGTH}
             className="press min-h-[62px] rounded-button bg-brand text-[20px] font-bold text-surface disabled:opacity-60"
           >
             {pending ? 'Wird geprüft …' : 'Weiter'}
@@ -172,12 +191,22 @@ export function LoginForm() {
         </form>
       )}
 
-      <p className="mt-auto flex items-center gap-3 text-[17px] leading-relaxed">
-        <span aria-hidden="true" className="h-[26px] w-[26px] flex-none rounded-full bg-accent" />
-        <span>
-          Probleme? Rufen Sie uns an: <strong className="whitespace-nowrap">[IHRE SERVICENUMMER]</strong>
-        </span>
-      </p>
+      {/*
+        Only shown once a real number exists. Telling someone who is already
+        stuck to ring "[IHRE SERVICENUMMER]" is worse than offering nothing —
+        and this audience is the one most likely to actually dial it.
+      */}
+      {SUPPORT_PHONE && (
+        <p className="mt-auto flex items-center gap-3 text-[17px] leading-relaxed">
+          <span aria-hidden="true" className="h-[26px] w-[26px] flex-none rounded-full bg-accent" />
+          <span>
+            Probleme? Rufen Sie uns an:{' '}
+            <a href={`tel:${SUPPORT_PHONE.replace(/\s/g, '')}`} className="font-bold whitespace-nowrap">
+              {SUPPORT_PHONE}
+            </a>
+          </span>
+        </p>
+      )}
     </main>
   )
 }

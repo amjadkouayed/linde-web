@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 
-import { LindeMark } from '@/components/site-nav'
+import { LindeMark } from '@/components/linde-mark'
 
 /**
  * Shared shell for the three legal pages. Set in the same large, high-contrast

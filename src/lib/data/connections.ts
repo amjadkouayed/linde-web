@@ -29,10 +29,17 @@ export async function getConnections(): Promise<ConnectionOverview[]> {
   return data ?? []
 }
 
-/** Total unread across all conversations — the nav badge. */
-export async function getUnreadTotal(): Promise<number> {
-  const connections = await getConnections()
-  return connections.reduce((total, c) => total + (c.unread_count ?? 0), 0)
+/** One conversation, for the chat screen. RLS returns nothing for a stranger's id. */
+export async function getConnection(connectionId: string): Promise<ConnectionOverview | null> {
+  const supabase = await createClient()
+
+  const { data } = await supabase
+    .from('connection_overview')
+    .select('*')
+    .eq('connection_id', connectionId)
+    .maybeSingle()
+
+  return data
 }
 
 export async function getMessages(connectionId: string, limit = 50): Promise<Message[]> {

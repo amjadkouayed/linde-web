@@ -1,4 +1,8 @@
 import Link from 'next/link'
+import { Suspense } from 'react'
+
+import { ContactsBadge } from '@/components/contacts-badge'
+import { LindeMark } from '@/components/linde-mark'
 
 const ITEMS = [
   { key: 'discover', label: 'Entdecken', href: '/discover' },
@@ -14,7 +18,7 @@ export type NavKey = (typeof ITEMS)[number]['key']
  * The active item is a filled pill rather than a colour change, so "where am I"
  * survives poor contrast, sunlight and older eyes.
  */
-export function SiteNav({ active, openRequests = 0 }: { active: NavKey; openRequests?: number }) {
+export function SiteNav({ active }: { active: NavKey }) {
   return (
     <header className="border-b border-line bg-raised">
       <div className="mx-auto flex max-w-[1080px] items-center justify-between gap-6 px-6 py-3">
@@ -36,13 +40,10 @@ export function SiteNav({ active, openRequests = 0 }: { active: NavKey; openRequ
                 }`}
               >
                 {item.label}
-                {item.key === 'contacts' && openRequests > 0 && (
-                  <span
-                    aria-label={`${openRequests} ${openRequests === 1 ? 'neue Anfrage' : 'neue Anfragen'}`}
-                    className="flex h-6 min-w-6 items-center justify-center rounded-full bg-accent px-1.5 text-sm font-bold text-ink"
-                  >
-                    {openRequests}
-                  </span>
+                {item.key === 'contacts' && (
+                  <Suspense fallback={null}>
+                    <ContactsBadge />
+                  </Suspense>
                 )}
               </Link>
             )
@@ -53,13 +54,3 @@ export function SiteNav({ active, openRequests = 0 }: { active: NavKey; openRequ
   )
 }
 
-/** Two overlapping circles with a gold lens. Never a leaf — see PRODUCT.md. */
-export function LindeMark({ size = 38 }: { size?: number }) {
-  return (
-    <svg viewBox="0 0 100 100" width={size} height={size} aria-hidden="true" className="block">
-      <circle cx="39" cy="50" r="30" fill="#55713F" />
-      <circle cx="69" cy="50" r="22" fill="#55713F" />
-      <path d="M60.93 29.53A22 22 0 0 0 60.93 70.47A30 30 0 0 0 60.93 29.53Z" fill="#C99A3E" />
-    </svg>
-  )
-}

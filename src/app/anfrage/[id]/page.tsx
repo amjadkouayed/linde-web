@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 
 import { Avatar } from '@/components/avatar'
+import { RecordView } from '@/components/discover/record-view'
 import { RequestForm } from '@/components/discover/request-form'
 import { SiteNav } from '@/components/site-nav'
 import { getDiscoverCard, requireProfile } from '@/lib/data/profiles'
@@ -33,6 +34,8 @@ async function Request({ params }: { params: Params }) {
 
   return (
     <div className="flex flex-col gap-6">
+      {card.offer_id && <RecordView offerId={card.offer_id} />}
+
       <div className="flex items-center gap-4">
         <Avatar name={card.name} size={64} />
         <h1 className="font-serif text-[28px] font-bold">Anfrage an {firstName}</h1>

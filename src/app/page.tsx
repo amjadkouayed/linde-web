@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import { LindeMark } from '@/components/site-nav'
+import { LindeMark } from '@/components/linde-mark'
 
 /**
  * One path in, for new and returning people alike: nobody has to work out
