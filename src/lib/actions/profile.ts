@@ -178,6 +178,26 @@ export async function updateMyLocation(formData: FormData): Promise<ActionResult
  * your own offer is refused by the policy, so a duplicate-key or RLS error here
  * is expected and not worth surfacing to the reader of a profile.
  */
+/**
+ * Delete the caller's own card. RLS scopes the statement to their row, so the
+ * .eq() is intent rather than protection. The screen confirms first: deleting
+ * removes them from everyone's Discover, which is not obvious from the word.
+ */
+export async function deleteMyOffer(): Promise<ActionResult> {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { error } = await supabase.from('offers').delete().eq('user_id', user.id)
+  if (error) return { error: error.message }
+
+  refresh()
+  return { error: null }
+}
+
 export async function recordOfferView(offerId: string): Promise<void> {
   const supabase = await createClient()
 
