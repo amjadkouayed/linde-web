@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 
-const RADII = ['5', '10', '25', '50', '100'] as const
+import { RADIUS_OPTIONS } from '@/lib/discover'
 
 /**
  * Always visible, never behind a sheet — eBay-Kleinanzeigen style, which this
@@ -64,7 +64,8 @@ export function LocationFilter({
         <fieldset className="flex flex-col gap-1.5">
           <legend className="mb-1.5 text-[17px] font-bold">Umkreis</legend>
           <div className="flex gap-1.5">
-            {RADII.map((value) => {
+            {RADIUS_OPTIONS.map((km) => {
+              const value = String(km)
               const isActive = value === radius
               return (
                 <button

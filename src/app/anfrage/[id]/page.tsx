@@ -4,7 +4,7 @@ import { Suspense } from 'react'
 import { Avatar } from '@/components/avatar'
 import { RequestForm } from '@/components/discover/request-form'
 import { SiteNav } from '@/components/site-nav'
-import { getDiscoverFeed, requireProfile } from '@/lib/data/profiles'
+import { getDiscoverCard, requireProfile } from '@/lib/data/profiles'
 
 type Params = Promise<{ id: string }>
 
@@ -26,9 +26,7 @@ async function Request({ params }: { params: Params }) {
   const { id } = await params
   await requireProfile()
 
-  // Reading the person out of the feed rather than from profiles keeps one rule
-  // in one place: if they are not in your feed, you may not ask them.
-  const card = (await getDiscoverFeed()).find((entry) => entry.profile_id === id)
+  const card = await getDiscoverCard(id)
   if (!card?.profile_id) notFound()
 
   const firstName = (card.name ?? '').split(' ')[0] || 'diese Person'
