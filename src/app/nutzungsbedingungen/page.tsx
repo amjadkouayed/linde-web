@@ -9,7 +9,7 @@ export default function NutzungsbedingungenPage() {
   return (
     <LegalPage title="Nutzungsbedingungen" updated="23. September 2026">
       <p>
-        Diese Bedingungen gelten zwischen Ihnen und <Todo>Name der verantwortlichen Stelle</Todo>{' '}
+        Diese Bedingungen gelten zwischen Ihnen und Amjad Kouayed{' '}
         („wir“) für die Nutzung von Linde. Bitte lesen Sie sie, bevor Sie ein Konto anlegen.
       </p>
 
@@ -62,7 +62,7 @@ export default function NutzungsbedingungenPage() {
       <p>
         Ein Hinweis, der uns besonders wichtig ist: <strong>Seriöse Anfragen fragen nie nach Geld
         oder Bankdaten.</strong> Wenn Ihnen etwas merkwürdig vorkommt, brechen Sie das Gespräch ab
-        und melden Sie es uns unter <Todo>Kontakt-E-Mail-Adresse</Todo>.
+        und melden Sie es uns unter <a href="mailto:amjad.ali.kouayed@gmail.com">amjad.ali.kouayed@gmail.com</a>.
       </p>
 
       <h2>5. Treffen finden außerhalb der App statt</h2>

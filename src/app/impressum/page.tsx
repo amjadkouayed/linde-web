@@ -15,7 +15,7 @@ export default function ImpressumPage() {
     <LegalPage title="Impressum" updated="23. September 2026">
       <h2>Angaben gemäß § 5 DDG</h2>
       <p>
-        <Todo>Name der verantwortlichen Person oder Einrichtung</Todo>
+        Amjad Kouayed
         <br />
         <Todo>Straße und Hausnummer</Todo>
         <br />
@@ -26,14 +26,12 @@ export default function ImpressumPage() {
 
       <h2>Kontakt</h2>
       <p>
-        E-Mail: <Todo>Kontakt-E-Mail-Adresse</Todo>
-        <br />
-        Telefon: <Todo>Telefonnummer, falls vorhanden</Todo>
+        E-Mail: <a href="mailto:amjad.ali.kouayed@gmail.com">amjad.ali.kouayed@gmail.com</a>
       </p>
 
       <h2>Verantwortlich für den Inhalt</h2>
       <p>
-        <Todo>Name und Anschrift der inhaltlich verantwortlichen Person</Todo>
+        Amjad Kouayed, Anschrift wie oben.
       </p>
 
       <h2>Art des Angebots</h2>

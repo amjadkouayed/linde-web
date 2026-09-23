@@ -28,6 +28,12 @@ const GOOGLE_ENABLED = false
 const MIN_CODE_LENGTH = 6
 const MAX_CODE_LENGTH = 10
 
+/** Sent here by /auth/confirm when a link in an e-mail could not be used. */
+const LINK_ERRORS: Record<string, string> = {
+  abgelaufen: 'Dieser Link ist abgelaufen. Fordern Sie bitte einen neuen Code an.',
+  link: 'Mit diesem Link stimmt etwas nicht. Fordern Sie bitte einen neuen Code an.',
+}
+
 export function LoginForm() {
   const router = useRouter()
   const params = useSearchParams()
@@ -36,7 +42,7 @@ export function LoginForm() {
   const [step, setStep] = useState<'email' | 'code'>('email')
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(LINK_ERRORS[params.get('fehler') ?? ''] ?? null)
   const [pending, startTransition] = useTransition()
 
   function requestCode() {

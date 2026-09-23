@@ -18,9 +18,9 @@ export default function DatenschutzPage() {
       <p>
         Verantwortlich im Sinne der Datenschutz-Grundverordnung (DSGVO) ist:
         <br />
-        <Todo>Name und Anschrift der verantwortlichen Stelle</Todo>
+        Amjad Kouayed, <Todo>Anschrift wie im Impressum</Todo>
         <br />
-        E-Mail: <Todo>Kontakt-E-Mail-Adresse</Todo>
+        E-Mail: <a href="mailto:amjad.ali.kouayed@gmail.com">amjad.ali.kouayed@gmail.com</a>
       </p>
       <p>
         Einen Datenschutzbeauftragten haben wir nicht benannt; dazu sind wir nach Art. 37 DSGVO
@@ -167,7 +167,7 @@ export default function DatenschutzPage() {
       </ul>
       <p>
         Vieles davon erledigen Sie direkt in der App: Profil und Angebot können Sie bearbeiten oder
-        löschen. Für alles Weitere schreiben Sie an <Todo>Kontakt-E-Mail-Adresse</Todo>. Wir
+        löschen. Für alles Weitere schreiben Sie an <a href="mailto:amjad.ali.kouayed@gmail.com">amjad.ali.kouayed@gmail.com</a>. Wir
         antworten innerhalb eines Monats.
       </p>
       <p>
