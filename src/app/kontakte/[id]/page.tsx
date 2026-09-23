@@ -4,7 +4,6 @@ import { Suspense } from 'react'
 
 import { Avatar } from '@/components/avatar'
 import { Chat } from '@/components/contacts/chat'
-import { SiteNav } from '@/components/site-nav'
 import { getConnection, getMessages } from '@/lib/data/connections'
 import { requireProfile } from '@/lib/data/profiles'
 
@@ -12,17 +11,11 @@ type Params = Promise<{ id: string }>
 
 export default function ChatPage({ params }: { params: Params }) {
   return (
-    <>
-      <SiteNav active="contacts" />
-
-      <main className="mx-auto w-full max-w-[720px] flex-grow px-6 py-8">
-        <Suspense
-          fallback={<div aria-hidden="true" className="h-[520px] rounded-card border border-line bg-raised" />}
-        >
-          <Thread params={params} />
-        </Suspense>
-      </main>
-    </>
+    <Suspense
+      fallback={<div aria-hidden="true" className="h-[520px] rounded-card border border-line bg-raised" />}
+    >
+      <Thread params={params} />
+    </Suspense>
   )
 }
 
@@ -40,10 +33,10 @@ async function Thread({ params }: { params: Params }) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
-        <Link href="/kontakte" aria-label="Zurück zu den Kontakten" className="text-[24px] text-ink no-underline">
+        <Link href="/kontakte" aria-label="Zurück zu den Kontakten" className="text-[24px] text-ink no-underline lg:hidden">
           ‹
         </Link>
-        <Avatar name={connection.other_name} size={56} />
+        <Avatar name={connection.other_name} path={connection.other_avatar_path} size={56} />
         <div className="flex flex-col">
           <h1 className="font-serif text-[26px] font-bold">{connection.other_name}</h1>
           {connection.other_age !== null && (

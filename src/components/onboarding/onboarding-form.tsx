@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 
+import { PhotoPicker } from '@/components/photo-picker'
 import { completeOnboarding } from '@/lib/actions/profile'
 
 type Role = 'student' | 'senior'
@@ -33,6 +34,7 @@ export function OnboardingForm() {
   const [status, setStatus] = useState('')
   const [bio, setBio] = useState('')
   const [interests, setInterests] = useState<string[]>([])
+  const [avatarPath, setAvatarPath] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
 
@@ -65,6 +67,7 @@ export function OnboardingForm() {
       formData.set('interests', interests.join(','))
       if (role === 'student') formData.set('study_field', studyField.trim())
       if (role === 'senior') formData.set('status', status)
+      if (avatarPath) formData.set('avatar_path', avatarPath)
 
       // On success the action redirects to /discover itself.
       const result = await completeOnboarding(formData)
@@ -112,6 +115,15 @@ export function OnboardingForm() {
       {step === 2 && (
         <section className="flex flex-col gap-5">
           <h1 className="font-serif text-[30px] font-bold">Ihr Profil</h1>
+
+          {/* Uploaded now, saved with the profile at the end: the photo goes to
+              storage straight away, but only the path waits in this form. */}
+          <PhotoPicker
+            name={name}
+            path={avatarPath}
+            onUploaded={setAvatarPath}
+            onRemove={() => setAvatarPath(null)}
+          />
 
           <Field label="Ihr Name" hint="Zum Beispiel „Helga B.“ — Ihr Nachname muss nicht sichtbar sein.">
             <input

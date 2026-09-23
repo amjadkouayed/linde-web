@@ -1,3 +1,6 @@
+import { Suspense } from 'react'
+
+import { RedirectIfOnboarded } from '@/components/auth-redirect'
 import { OnboardingForm } from '@/components/onboarding/onboarding-form'
 import { LindeMark } from '@/components/linde-mark'
 
@@ -13,6 +16,10 @@ export default function OnboardingPage() {
         <LindeMark size={40} />
         <span className="font-serif text-[26px] font-bold">Linde</span>
       </div>
+
+      <Suspense fallback={null}>
+        <RedirectIfOnboarded />
+      </Suspense>
 
       <OnboardingForm />
     </main>

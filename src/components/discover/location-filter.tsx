@@ -62,7 +62,9 @@ export function LocationFilter({
 
         <fieldset className="flex flex-col gap-1.5">
           <legend className="mb-1.5 text-[17px] font-bold">Umkreis</legend>
-          <div className="flex gap-1.5">
+          {/* Five equal columns on a phone: in one unwrapped row the chips were
+              497 px wide and pushed the whole Discover page sideways. */}
+          <div className="grid grid-cols-5 gap-1.5 sm:flex">
             {RADIUS_OPTIONS.map((km) => {
               const value = String(km)
               const isActive = value === radius
@@ -75,7 +77,7 @@ export function LocationFilter({
                     setRadius(value)
                     submit(value)
                   }}
-                  className={`press min-h-[52px] whitespace-nowrap rounded-input border-2 px-4 text-[17px] font-bold ${
+                  className={`press min-h-[52px] whitespace-nowrap rounded-input border-2 px-1 text-[16px] font-bold sm:px-4 sm:text-[17px] ${
                     isActive
                       ? 'border-brand bg-brand text-surface'
                       : 'border-control bg-surface text-ink'

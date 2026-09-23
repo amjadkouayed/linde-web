@@ -19,7 +19,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(24);
+select plan(33);
 
 create function tests_as(p_user uuid) returns void
 language plpgsql
@@ -314,6 +314,98 @@ select is(
    where profile_id = '44444444-4444-4444-4444-444444444444'),
   0,
   'distance search still excludes people you already have a connection with'
+);
+
+
+-- ---------------------------------------------------------------------------
+-- Profile photo: only from your own storage folder
+-- ---------------------------------------------------------------------------
+
+-- The avatars bucket is public. Without this, Lena could point her profile at
+-- Ingrid's photo and appear in discover wearing someone else's face.
+select tests_as('11111111-1111-1111-1111-111111111111');
+select throws_ok(
+  $$update public.profiles set avatar_path = '33333333-3333-3333-3333-333333333333/1.jpg'
+    where id = '11111111-1111-1111-1111-111111111111'$$,
+  '23514', null,
+  'cannot use a photo from someone else''s folder'
+);
+
+select lives_ok(
+  $$update public.profiles set avatar_path = '11111111-1111-1111-1111-111111111111/1.jpg'
+    where id = '11111111-1111-1111-1111-111111111111'$$,
+  'can use a photo from your own folder'
+);
+
+
+-- ---------------------------------------------------------------------------
+-- Retention: offer views older than 90 days are deleted nightly
+-- ---------------------------------------------------------------------------
+
+select tests_as_owner();
+
+insert into public.offer_views (offer_id, viewer_id, viewed_on)
+select o.id, '22222222-2222-2222-2222-222222222222', current_date - 91
+from public.offers o where o.user_id = '33333333-3333-3333-3333-333333333333';
+
+insert into public.offer_views (offer_id, viewer_id, viewed_on)
+select o.id, '22222222-2222-2222-2222-222222222222', current_date - 89
+from public.offers o where o.user_id = '33333333-3333-3333-3333-333333333333';
+
+-- Run exactly what the cron job runs, so the test breaks if the job does.
+select lives_ok(
+  (select command from cron.job where jobname = 'expire-offer-views'),
+  'the retention job runs'
+);
+
+select is(
+  (select count(*)::int from public.offer_views where viewed_on < current_date - 90),
+  0,
+  'offer views older than 90 days are gone'
+);
+
+select is(
+  (select count(*)::int from public.offer_views where viewed_on = current_date - 89),
+  1,
+  'offer views inside 90 days are kept'
+);
+
+
+-- ---------------------------------------------------------------------------
+-- Account deletion (Art. 17). Last, because it removes a fixture.
+-- ---------------------------------------------------------------------------
+
+select tests_as_owner();
+set local role anon;
+select throws_ok(
+  'select public.delete_my_account()',
+  '42501', null,
+  'a signed-out caller cannot delete anything'
+);
+
+-- Tariq has a profile, a card, an accepted connection with Ingrid and messages.
+select tests_as('22222222-2222-2222-2222-222222222222');
+select lives_ok('select public.delete_my_account()', 'a user can delete their own account');
+
+select tests_as_owner();
+
+select is(
+  (select count(*)::int from auth.users where id = '22222222-2222-2222-2222-222222222222')
+  + (select count(*)::int from public.profiles where id = '22222222-2222-2222-2222-222222222222')
+  + (select count(*)::int from public.offers where user_id = '22222222-2222-2222-2222-222222222222')
+  + (select count(*)::int from public.connections
+       where '22222222-2222-2222-2222-222222222222' in (requester_id, recipient_id))
+  + (select count(*)::int from public.messages where sender_id = '22222222-2222-2222-2222-222222222222'),
+  0,
+  'deleting an account removes the user, profile, card, connections and messages'
+);
+
+-- The function takes no argument, so there is no way to aim it at someone else;
+-- this checks the cascade did not wander either.
+select is(
+  (select count(*)::int from public.profiles where id = '33333333-3333-3333-3333-333333333333'),
+  1,
+  'the other person in the conversation keeps their account'
 );
 
 

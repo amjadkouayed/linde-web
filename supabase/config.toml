@@ -246,15 +246,13 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
-# Off, so Supabase's own sender delivers the codes — that is the decision, and
-# locally mail goes to Mailpit on http://localhost:54324 either way.
+# Off LOCALLY, where mail goes to Mailpit on http://localhost:54324.
 #
-# Know the ceiling: the built-in sender is heavily rate limited (a handful of
-# messages per hour) and Supabase documents it as unsuitable for production.
-# Since signing in IS an email here, that limit is the front door. If sign-ins
-# start failing silently under load, this block is the first thing to turn on —
-# the key is read from the environment and must never be written into this file,
-# because the repo is public.
+# Production must not rely on Supabase's built-in sender: on the free tier its
+# template is locked (so the email can never contain the code), it sends two
+# emails an hour, and it only delivers to organisation members. Production needs
+# custom SMTP, configured in the dashboard — see README, "Deploying → Email".
+# The key is never written into this file; the repo is public.
 [auth.email.smtp]
 enabled = false
 host = "smtp.resend.com"

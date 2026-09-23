@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState, useTransition } from 'react'
 
 import { Avatar } from '@/components/avatar'
+import { personLine } from '@/lib/labels'
 import { deleteMyOffer, updateMyCard } from '@/lib/actions/profile'
 import type { Offer, OfferStats, Profile } from '@/lib/data/profiles'
 
@@ -194,21 +195,23 @@ export function OfferManager({
         <h2 className="text-[17px] font-bold text-muted">So sehen andere Ihr Angebot</h2>
 
         <div className="flex items-center gap-5">
-          <Avatar name={profile.name} size={96} />
+          <Avatar name={profile.name} path={profile.avatar_path} size={96} />
           <div className="flex flex-col gap-1">
             <span className="font-serif text-[26px] font-semibold">{profile.name}</span>
-            {profile.study_field && (
-              <span className="text-[18px] text-muted">Studiert {profile.study_field}</span>
-            )}
+            <span className="text-[18px] text-muted">
+              {personLine({
+                age: new Date().getFullYear() - profile.birth_year,
+                role: profile.role,
+                studyField: profile.study_field,
+                status: profile.status,
+              })}
+            </span>
           </div>
         </div>
 
         <p className="text-pretty text-[19px] leading-relaxed">{offer?.description}</p>
 
         <ul className="flex flex-wrap gap-2">
-          <Fact>
-            {new Date().getFullYear() - profile.birth_year} Jahre
-          </Fact>
           <Fact>
             {profile.postal_code} {profile.city}
           </Fact>
