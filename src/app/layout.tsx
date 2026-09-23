@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Bitter, Karla } from 'next/font/google'
 
+import { HashSession } from '@/components/auth/hash-session'
 import { SiteFooter } from '@/components/site-footer'
 
 import './globals.css'
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="de" className={`${bitter.variable} ${karla.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
+        <HashSession />
         {children}
         <SiteFooter />
       </body>
