@@ -43,3 +43,7 @@ next-env.d.ts
 
 # impeccable engine binary (downloads itself on first use)
 .claude/skills/impeccable/scripts/bin/
+
+# graphify knowledge graph output — generated, machine-specific (absolute
+# interpreter paths), and rebuilt from source. Not shared state.
+/graphify-out/

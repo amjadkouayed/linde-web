@@ -1,5 +1,8 @@
 import type { Metadata } from 'next'
 import { Bitter, Karla } from 'next/font/google'
+
+import { SiteFooter } from '@/components/site-footer'
+
 import './globals.css'
 
 // Bitter carries headings and names, Karla everything else.
@@ -23,7 +26,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="de" className={`${bitter.variable} ${karla.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        {children}
+        <SiteFooter />
+      </body>
     </html>
   )
 }

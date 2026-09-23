@@ -155,11 +155,21 @@ max_indexes = 5
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
+# ---------------------------------------------------------------------------
+# DO NOT RUN `supabase config push`.
+#
+# Production auth is configured in the Supabase dashboard and this file does not
+# describe it. A push overwrites the whole [auth] block, so it would replace the
+# live settings with the local ones below and break sign-in for everyone.
+#
+# These values are the LOCAL development truth only. Change production in the
+# dashboard; mirror it here in a comment if it matters.
+# ---------------------------------------------------------------------------
 site_url = "http://127.0.0.1:3000"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+additional_redirect_urls = ["http://127.0.0.1:3000/**", "http://localhost:3000/**"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
@@ -195,7 +205,11 @@ password_requirements = ""
 
 [auth.rate_limit]
 # Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
-email_sent = 2
+# Every sign-in sends one, because login is a mailed code rather than a password.
+# At the default of 2 the third person to sign in during a demo silently gets
+# nothing. Supabase's own built-in sender is capped far lower than this whatever
+# the number says, so the cloud project needs real SMTP (Resend) to honour it.
+email_sent = 60
 # Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
 sms_sent = 30
 # Number of anonymous sign-ins that can be made per hour per IP address. Requires enable_anonymous_sign_ins = true.
@@ -232,13 +246,15 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
-# Resend. Disabled locally — mail goes to Mailpit on http://localhost:54324
-# instead, so the demo accounts work without an inbox. Set enabled = true only
-# where real delivery is wanted.
+# Off, so Supabase's own sender delivers the codes — that is the decision, and
+# locally mail goes to Mailpit on http://localhost:54324 either way.
 #
-# The key is read from the environment and must NEVER be written into this file:
-# this repo is public. Put RESEND_API_KEY in .env (gitignored) locally, and set
-# SMTP in the Supabase dashboard for the cloud project.
+# Know the ceiling: the built-in sender is heavily rate limited (a handful of
+# messages per hour) and Supabase documents it as unsuitable for production.
+# Since signing in IS an email here, that limit is the front door. If sign-ins
+# start failing silently under load, this block is the first thing to turn on —
+# the key is read from the environment and must never be written into this file,
+# because the repo is public.
 [auth.email.smtp]
 enabled = false
 host = "smtp.resend.com"
@@ -248,10 +264,18 @@ pass = "env(RESEND_API_KEY)"
 admin_email = "noreply@linde.app"
 sender_name = "Linde"
 
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+# German templates that show the six-digit code and contain no link at all.
+# The app signs people in with verifyOtp — they type the code — so a button
+# would be a second, different way in, and it breaks whenever Site URL is wrong.
+[auth.email.template.magic_link]
+subject = "Ihr Anmeldecode für Linde"
+content_path = "./supabase/templates/magic_link.html"
+
+# signInWithOtp({ shouldCreateUser: true }) sends this one, not magic_link,
+# when the address is not yet known.
+[auth.email.template.confirmation]
+subject = "Willkommen bei Linde – Ihr Bestätigungscode"
+content_path = "./supabase/templates/confirmation.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]

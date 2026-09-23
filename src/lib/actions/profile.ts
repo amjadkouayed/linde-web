@@ -171,6 +171,28 @@ export async function updateMyLocation(formData: FormData): Promise<ActionResult
 }
 
 /**
+ * Delete the caller's own card. RLS scopes the statement to their row, so the
+ * .eq() is intent rather than protection. The screen confirms first: deleting
+ * removes them from everyone's Discover, which is not obvious from the word.
+ * Existing connections are untouched — taking your card down is not the same as
+ * cutting off the people you already agreed to meet.
+ */
+export async function deleteMyOffer(): Promise<ActionResult> {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { error } = await supabase.from('offers').delete().eq('user_id', user.id)
+  if (error) return { error: error.message }
+
+  refresh()
+  return { error: null }
+}
+
+/**
  * Register that someone looked at an offer, for "34 Aufrufe diese Woche".
  *
  * The primary key is (offer_id, viewer_id, viewed_on), so a repeat view on the
@@ -189,4 +211,15 @@ export async function recordOfferView(offerId: string): Promise<void> {
   await supabase
     .from('offer_views')
     .insert({ offer_id: offerId, viewer_id: user.id })
+}
+
+/**
+ * There was no way out of the app at all before this. It matters for more than
+ * tidiness: on a shared or borrowed device, no sign-out means the next person
+ * is signed in as you.
+ */
+export async function signOut(): Promise<void> {
+  const supabase = await createClient()
+  await supabase.auth.signOut()
+  redirect('/')
 }
