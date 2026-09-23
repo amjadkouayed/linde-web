@@ -19,7 +19,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(21);
+select plan(24);
 
 create function tests_as(p_user uuid) returns void
 language plpgsql
@@ -63,14 +63,16 @@ values ('00000000-0000-0000-0000-000000000000',
 
 select tests_as('99999999-9999-9999-9999-999999999999');
 select lives_ok(
-  $$insert into public.profiles (id, role, name, birth_year) values
-    ('99999999-9999-9999-9999-999999999999', 'student', 'Neue Nutzerin', 2003)$$,
+  $$insert into public.profiles (id, role, name, birth_year, postal_code, city) values
+    ('99999999-9999-9999-9999-999999999999', 'student', 'Neue Nutzerin', 2003,
+     '49074', 'Osnabrück')$$,
   'a new user can create their own profile'
 );
 
 select throws_ok(
-  $$insert into public.profiles (id, role, name, birth_year) values
-    ('88888888-8888-8888-8888-888888888888', 'student', 'Gestohlen', 2003)$$,
+  $$insert into public.profiles (id, role, name, birth_year, postal_code, city) values
+    ('88888888-8888-8888-8888-888888888888', 'student', 'Gestohlen', 2003,
+     '49074', 'Osnabrück')$$,
   -- Any error: the WITH CHECK and the foreign key both refuse this, and which
   -- fires first is not guaranteed.
   null, null,
@@ -275,6 +277,43 @@ select is(
   (select count(*)::int from public.my_offer_stats),
   1,
   'offer stats only ever cover your own offer'
+);
+
+
+-- ---------------------------------------------------------------------------
+-- Location
+-- ---------------------------------------------------------------------------
+
+select tests_as('11111111-1111-1111-1111-111111111111');
+
+-- A postal code that does not exist must not enter the database with a
+-- plausible-looking place name attached to it.
+select throws_ok(
+  $$update public.profiles set postal_code = '00000'
+    where id = '11111111-1111-1111-1111-111111111111'$$,
+  '23514', null,
+  'an unknown postal code is refused'
+);
+
+-- The place name comes from the reference table, not from whatever the form
+-- sent, so the "80331 → München" confirmation means something.
+update public.profiles
+set postal_code = '80331', city = 'Entenhausen'
+where id = '11111111-1111-1111-1111-111111111111';
+
+select is(
+  (select city from public.profiles where id = '11111111-1111-1111-1111-111111111111'),
+  'München',
+  'the place name is taken from the postal code table, not from the client'
+);
+
+-- Lena has a pending request out to Werner, so distance search must not offer
+-- him back to her however wide she searches.
+select is(
+  (select count(*)::int from public.discover('80331', 100)
+   where profile_id = '44444444-4444-4444-4444-444444444444'),
+  0,
+  'distance search still excludes people you already have a connection with'
 );
 
 

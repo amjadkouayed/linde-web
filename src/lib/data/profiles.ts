@@ -4,7 +4,7 @@ import { cacheLife } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 import { createClient } from '@/lib/supabase/server'
-import type { Tables } from '@/lib/supabase/database.types'
+import type { Database, Tables } from '@/lib/supabase/database.types'
 
 /**
  * What may be cached here, and what may not.
@@ -27,6 +27,12 @@ export type Profile = Tables<'profiles'>
 export type Offer = Tables<'offers'>
 export type DiscoverCard = Tables<'discover_feed'>
 export type OfferStats = Tables<'my_offer_stats'>
+/** A discover card with an approximate distance attached. */
+export type NearbyCard = Database['public']['Functions']['discover']['Returns'][number]
+
+/** The radius choices the design offers, in km. */
+export const RADIUS_OPTIONS = [5, 10, 25, 50, 100] as const
+export const DEFAULT_RADIUS = 25
 
 /** The signed-in user's profile, or null if they have not onboarded yet. */
 export async function getCurrentProfile(): Promise<Profile | null> {
@@ -73,6 +79,43 @@ export async function getMyOffer(): Promise<Offer | null> {
     .maybeSingle()
 
   return data
+}
+
+/**
+ * Resolve a postal code to its place name. Used to confirm what someone typed
+ * ("80331 → München"), which is free typo protection, and to tell an unknown
+ * code apart from a genuinely empty result.
+ */
+export async function lookupPostalCode(plz: string): Promise<{ plz: string; city: string } | null> {
+  const supabase = await createClient()
+
+  const { data } = await supabase
+    .from('postal_codes')
+    .select('plz, city')
+    .eq('plz', plz)
+    .maybeSingle()
+
+  return data
+}
+
+/**
+ * Published offers of the opposite role within a radius, nearest first.
+ *
+ * One database function does the whole thing — the role, published and
+ * not-already-connected filters plus the distance maths — so the mobile app
+ * makes the same call and gets the same answer, and no distance arithmetic
+ * lives in either client. It returns a rounded distance and never coordinates.
+ */
+export async function searchNearby(plz: string, radiusKm: number): Promise<NearbyCard[]> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase.rpc('discover', {
+    search_plz: plz,
+    radius_km: radiusKm,
+  })
+
+  if (error) throw error
+  return data ?? []
 }
 
 /** Views this week and open requests, for "Mein Angebot". */

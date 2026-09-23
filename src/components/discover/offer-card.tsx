@@ -1,7 +1,17 @@
 import Link from 'next/link'
 
 import { Avatar } from '@/components/avatar'
-import type { DiscoverCard } from '@/lib/data/profiles'
+import type { NearbyCard } from '@/lib/data/profiles'
+
+/**
+ * Never "0 km" — someone in the same postal code is not zero metres away, and
+ * the figure would read as broken. Never an exact number either: the distance
+ * is between two postal code centres, so "ca." is the honest prefix.
+ */
+function distanceLabel(km: number | null): string | null {
+  if (km === null) return null
+  return km < 1 ? 'ganz in der Nähe' : `ca. ${km} km`
+}
 
 const STATUS_LABEL: Record<string, string> = {
   rentner: 'Rentner',
@@ -15,9 +25,10 @@ const STATUS_LABEL: Record<string, string> = {
  * - age is a CHIP among the facts, never next to the name;
  * - one outlined action, so three cards do not shout three primary buttons.
  */
-export function OfferCard({ card }: { card: DiscoverCard }) {
+export function OfferCard({ card }: { card: NearbyCard }) {
   const firstName = (card.name ?? '').split(' ')[0] || 'diese Person'
   const detail = card.role === 'student' ? card.study_field : STATUS_LABEL[card.status ?? '']
+  const distance = distanceLabel(card.km)
 
   return (
     <article className="flex flex-col gap-3.5 rounded-card border border-line bg-raised p-5">
@@ -27,10 +38,10 @@ export function OfferCard({ card }: { card: DiscoverCard }) {
         <div className="flex min-w-0 flex-grow flex-col gap-1.5">
           <div className="flex items-baseline justify-between gap-3">
             <h2 className="font-serif text-2xl font-semibold">{card.name}</h2>
-            {card.city && (
+            {(distance ?? card.city) && (
               <span className="flex items-center gap-1.5 whitespace-nowrap text-[17px] font-bold text-muted">
                 <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-accent" />
-                {card.city}
+                {distance ?? card.city}
               </span>
             )}
           </div>
