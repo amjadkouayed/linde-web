@@ -10,7 +10,18 @@ import { NextResponse, type NextRequest } from 'next/server'
  * Actions are POSTs to the same routes, so a matcher change can silently drop
  * coverage. Authorisation lives in the DAL and in RLS.
  */
-const PUBLIC_PATHS = ['/', '/login', '/signup', '/auth']
+// The three legal pages must be reachable without an account: someone deciding
+// whether to sign up is exactly the person who needs to read them first, and
+// German law requires the Impressum to be accessible to anyone.
+const PUBLIC_PATHS = [
+  '/',
+  '/login',
+  '/signup',
+  '/auth',
+  '/impressum',
+  '/datenschutz',
+  '/nutzungsbedingungen',
+]
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request })
