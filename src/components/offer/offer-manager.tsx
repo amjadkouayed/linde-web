@@ -9,6 +9,8 @@ import { deleteMyOffer, updateMyCard } from '@/lib/actions/profile'
 import type { Offer, OfferStats, Profile } from '@/lib/data/profiles'
 
 type View = 'empty' | 'form' | 'live'
+const MAX_AVAILABILITY_LENGTH = 500
+const MAX_DESCRIPTION_LENGTH = 1000
 
 /**
  * Three states on one screen, as designed: nothing yet, the three-field form,
@@ -30,11 +32,21 @@ export function OfferManager({
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
+  const availabilityTooLong = availability.length > MAX_AVAILABILITY_LENGTH
+  const descriptionTooLong = description.length > MAX_DESCRIPTION_LENGTH
 
   function publish() {
     setError(null)
     if (!availability.trim() || !description.trim()) {
       setError('Bitte füllen Sie beide Felder aus.')
+      return
+    }
+    if (availability.trim().length > MAX_AVAILABILITY_LENGTH) {
+      setError(`Die Verfügbarkeit darf höchstens ${MAX_AVAILABILITY_LENGTH} Zeichen lang sein.`)
+      return
+    }
+    if (description.trim().length > MAX_DESCRIPTION_LENGTH) {
+      setError(`Die Beschreibung darf höchstens ${MAX_DESCRIPTION_LENGTH} Zeichen lang sein.`)
       return
     }
     startTransition(async () => {
@@ -64,13 +76,13 @@ export function OfferManager({
   if (view === 'form') {
     return (
       <form
-        className="flex flex-col gap-6 rounded-card border border-line bg-raised p-7 md:grid md:grid-cols-2 md:gap-8"
+        className="flex min-w-0 flex-col gap-6 rounded-card border border-line bg-raised p-7 md:grid md:grid-cols-2 md:gap-8"
         onSubmit={(event) => {
           event.preventDefault()
           publish()
         }}
       >
-        <div className="flex flex-col gap-5">
+        <div className="flex min-w-0 flex-col gap-5">
           <p className="text-[19px] leading-relaxed text-muted">Zwei Angaben — dann sind Sie sichtbar.</p>
 
           <div className="flex flex-col gap-2">
@@ -79,13 +91,18 @@ export function OfferManager({
             </label>
             <input
               id="availability"
+              maxLength={MAX_AVAILABILITY_LENGTH}
               value={availability}
               onChange={(event) => setAvailability(event.target.value)}
+              aria-invalid={availabilityTooLong}
               placeholder="z. B. Dienstag und Donnerstag nachmittags"
-              className="rounded-input border-2 border-control bg-surface px-4 py-3.5 text-[19px] focus:border-brand focus:outline-none"
+              className="w-full min-w-0 max-w-full rounded-input border-2 border-control bg-surface px-4 py-3.5 text-[19px] focus:border-brand focus:outline-none"
             />
             <span className="text-[16px] text-muted">
               Genaue Zeiten machen Sie später im Chat aus.
+            </span>
+            <span className="text-[16px] text-muted">
+              {availability.length}/{MAX_AVAILABILITY_LENGTH} Zeichen
             </span>
           </div>
 
@@ -100,7 +117,7 @@ export function OfferManager({
           </div>
         </div>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex min-w-0 flex-col gap-4">
           <div className="flex flex-col gap-2">
             <label htmlFor="description" className="text-[17px] font-bold">
               Was suchen Sie, was bieten Sie?
@@ -108,11 +125,21 @@ export function OfferManager({
             <textarea
               id="description"
               rows={7}
+              maxLength={MAX_DESCRIPTION_LENGTH}
               value={description}
               onChange={(event) => setDescription(event.target.value)}
+              aria-invalid={descriptionTooLong}
               placeholder="Zum Beispiel: Ich möchte Deutsch üben und helfe gern beim Einkaufen."
-              className="resize-none rounded-input border-2 border-control bg-surface px-4 py-3.5 text-[18px] leading-relaxed focus:border-brand focus:outline-none"
+              className="box-border min-h-0 w-full min-w-0 max-w-full resize-none rounded-input border-2 border-control bg-surface px-4 py-3.5 text-[18px] leading-relaxed focus:border-brand focus:outline-none"
             />
+            <span className={`text-[16px] ${descriptionTooLong ? 'font-bold text-brand-pressed' : 'text-muted'}`}>
+              {description.length}/{MAX_DESCRIPTION_LENGTH} Zeichen
+            </span>
+            {descriptionTooLong && (
+              <p role="alert" className="text-[17px] font-bold text-brand-pressed">
+                Die Beschreibung darf höchstens {MAX_DESCRIPTION_LENGTH} Zeichen lang sein.
+              </p>
+            )}
           </div>
 
           {error && <ErrorNote>{error}</ErrorNote>}

@@ -28,7 +28,27 @@ export type Offer = Tables<'offers'>
 export type DiscoverCard = Tables<'discover_feed'>
 export type OfferStats = Tables<'my_offer_stats'>
 /** A discover card with an approximate distance attached. */
-export type NearbyCard = Database['public']['Functions']['discover']['Returns'][number]
+export type NearbyCard = Database['public']['Functions']['discover']['Returns'][number] & {
+  username: string
+}
+export type RequestCard = {
+  profile_id: string
+  name: string
+  role: string
+  bio: string | null
+  interests: string[]
+  study_field: string | null
+  avatar_path: string | null
+  status: string | null
+  age: number
+  offer_id: string
+  availability: string
+  description: string
+  city: string
+  postal_code: string
+  created_at: string
+  username: string
+}
 
 /** The signed-in user's profile, or null if they have not onboarded yet. */
 export async function getCurrentProfile(): Promise<Profile | null> {
@@ -111,7 +131,19 @@ export async function searchNearby(plz: string, radiusKm: number): Promise<Nearb
   })
 
   if (error) throw error
-  return data ?? []
+  const cards = data ?? []
+  if (cards.length === 0) return []
+
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, username')
+    .in('id', cards.map((card) => card.profile_id))
+
+  const usernames = new Map((profiles ?? []).map((profile) => [profile.id, profile.username]))
+  return cards.flatMap((card) => {
+    const username = usernames.get(card.profile_id)
+    return username ? [{ ...card, username }] : []
+  })
 }
 
 /** Views this week and open requests, for "Mein Angebot". */
@@ -143,4 +175,49 @@ export async function getDiscoverCard(profileId: string): Promise<DiscoverCard |
     .maybeSingle()
 
   return data
+}
+
+/**
+ * The request screen must keep rendering after the request is submitted.
+ * `discover_feed` intentionally removes connected people, so it cannot also
+ * be the source for this detail page once the connection row exists.
+ */
+export async function getRequestCard(profileId: string): Promise<RequestCard | null> {
+  const supabase = await createClient()
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id, username, name, role, bio, interests, study_field, avatar_path, status, birth_year, city, postal_code')
+    .eq('username', profileId)
+    .maybeSingle()
+
+  if (!profile) return null
+
+  const { data: offer } = await supabase
+    .from('offers')
+    .select('id, availability, description, created_at')
+    .eq('user_id', profile.id)
+    .eq('is_published', true)
+    .maybeSingle()
+
+  if (!offer) return null
+
+  return {
+    profile_id: profile.id,
+    username: profile.username,
+    name: profile.name,
+    role: profile.role,
+    bio: profile.bio,
+    interests: profile.interests,
+    study_field: profile.study_field,
+    avatar_path: profile.avatar_path,
+    status: profile.status,
+    age: new Date().getFullYear() - profile.birth_year,
+    offer_id: offer.id,
+    availability: offer.availability,
+    description: offer.description,
+    city: profile.city,
+    postal_code: profile.postal_code,
+    created_at: offer.created_at,
+  }
 }

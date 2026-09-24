@@ -4,6 +4,7 @@ import { Suspense } from 'react'
 import { SiteNav } from '@/components/site-nav'
 import { LocationFilter } from '@/components/discover/location-filter'
 import { OfferCard } from '@/components/discover/offer-card'
+import { RequestSentToast } from '@/components/discover/request-sent-toast'
 import { lookupPostalCode, requireProfile, searchNearby } from '@/lib/data/profiles'
 import { RADIUS_OPTIONS, parseRadius } from '@/lib/discover'
 
@@ -33,7 +34,7 @@ export default function DiscoverPage({ searchParams }: { searchParams: Search })
 }
 
 async function Feed({ searchParams }: { searchParams: Search }) {
-  const { plz, umkreis } = await searchParams
+  const { plz, umkreis, request } = await searchParams
   const profile = await requireProfile()
 
   const postalCode = typeof plz === 'string' && /^\d{5}$/.test(plz) ? plz : profile.postal_code
@@ -45,6 +46,7 @@ async function Feed({ searchParams }: { searchParams: Search }) {
   if (!area) {
     return (
       <div className="flex flex-col gap-6">
+        {request === 'sent' && <RequestSentToast />}
         <LocationFilter defaultPostalCode={postalCode} resultCount={0} />
         <p role="alert" className="rounded-card border border-line bg-raised p-8 text-[19px] leading-relaxed">
           Diese Postleitzahl kennen wir nicht. Bitte prüfen Sie die fünf Ziffern.
@@ -59,6 +61,7 @@ async function Feed({ searchParams }: { searchParams: Search }) {
 
   return (
     <div className="flex flex-col gap-6">
+      {request === 'sent' && <RequestSentToast />}
       <p className="text-[19px] text-muted">
         {profile.role === 'student'
           ? 'Seniorinnen und Senioren, die Zeit haben'

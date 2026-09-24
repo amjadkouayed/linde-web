@@ -59,30 +59,30 @@ on conflict do nothing;
 
 -- Profiles ------------------------------------------------------------------
 
-insert into public.profiles (id, role, name, birth_year, status, bio, interests, study_field,
+insert into public.profiles (id, username, role, name, birth_year, status, bio, interests, study_field,
                              postal_code, city, lat, lng)
 values
-  ('11111111-1111-1111-1111-111111111111', 'student', 'Lena Vogt', 2002, null,
+  ('11111111-1111-1111-1111-111111111111', 'lena-vogt', 'student', 'Lena Vogt', 2002, null,
    'Medizinstudentin im 4. Semester. Ich koche gern und höre gern Geschichten von früher.',
    array['Kochen', 'Musik', 'Spazieren'], 'Medizin',
    '49074', 'Osnabrück', 52.272, 8.0498),
 
-  ('22222222-2222-2222-2222-222222222222', 'student', 'Tariq Haddad', 2003, null,
+  ('22222222-2222-2222-2222-222222222222', 'tariq-haddad', 'student', 'Tariq Haddad', 2003, null,
    'Ich komme aus Jordanien und studiere seit einem Jahr in Osnabrück. Ich möchte mein Deutsch verbessern.',
    array['Sprache', 'Schach', 'Fotografie'], 'Informatik',
    '49080', 'Osnabrück', 52.253, 8.03),
 
-  ('33333333-3333-3333-3333-333333333333', 'senior', 'Ingrid Schäfer', 1948, 'rentnerin',
+  ('33333333-3333-3333-3333-333333333333', 'ingrid-schaefer', 'senior', 'Ingrid Schäfer', 1948, 'rentnerin',
    'Ich war 35 Jahre lang Lehrerin. Heute lese ich viel und arbeite im Garten.',
    array['Lesen', 'Garten', 'Sprache'], null,
    '49090', 'Osnabrück', 52.302, 8.052),
 
-  ('44444444-4444-4444-4444-444444444444', 'senior', 'Werner Pohl', 1945, 'rentner',
+  ('44444444-4444-4444-4444-444444444444', 'werner-pohl', 'senior', 'Werner Pohl', 1945, 'rentner',
    'Früher Schlosser, heute Schachspieler. Ich erkläre gern, wie Dinge funktionieren.',
    array['Schach', 'Technik', 'Musik'], null,
    '49191', 'Belm', 52.305, 8.137),
 
-  ('55555555-5555-5555-5555-555555555555', 'senior', 'Elisabeth Wagner', 1957, 'berufstaetig',
+  ('55555555-5555-5555-5555-555555555555', 'elisabeth-wagner', 'senior', 'Elisabeth Wagner', 1957, 'berufstaetig',
    'Ich singe im Chor und erzähle gern von meiner Zeit in Hamburg.',
    array['Musik', 'Geschichte', 'Kochen'], null,
    '49497', 'Mettingen', 52.3167, 7.7833)
