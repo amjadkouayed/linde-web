@@ -66,7 +66,7 @@ export function OfferCard({ card }: { card: NearbyCard }) {
       </ul>
 
       <Link
-        href={`/anfrage/${card.profile_id}`}
+        href={`/anfrage/${card.username}`}
         className="press mt-auto flex min-h-[54px] items-center justify-center rounded-button border-2 border-brand bg-raised text-[18px] font-bold text-brand-pressed no-underline"
       >
         Anfrage an {firstName}

@@ -21,6 +21,8 @@ const SENIOR_STATUSES = ['rentner', 'rentnerin', 'berufstaetig'] as const
 // The actual policy lives here.
 const MIN_AGE = 16
 const MAX_AGE = 120
+const MAX_AVAILABILITY_LENGTH = 500
+const MAX_DESCRIPTION_LENGTH = 1000
 
 function parseInterests(raw: FormDataEntryValue | null): string[] {
   return String(raw ?? '')
@@ -57,6 +59,10 @@ export async function completeOnboarding(formData: FormData): Promise<ActionResu
   if (!name) {
     return { error: 'Bitte gib deinen Namen an.' }
   }
+  const username = String(formData.get('username') ?? '').trim().toLowerCase()
+  if (!/^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?$/.test(username)) {
+    return { error: 'Bitte wählen Sie einen Nutzernamen mit 3 bis 30 Zeichen.' }
+  }
 
   // The UI collects an age; we store the birth year, because an age column is
   // silently wrong from the person's next birthday onwards.
@@ -85,11 +91,22 @@ export async function completeOnboarding(formData: FormData): Promise<ActionResu
     return { error: 'Bitte gib deinen Ort an.' }
   }
 
+  const { data: existingProfile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  // A second tab, or the back button, should return to the app rather than
+  // attempting another insert.
+  if (existingProfile) redirect('/discover')
+
   // profiles.id IS the auth user id, so the row can only ever be the caller's.
   const { error } = await supabase.from('profiles').insert({
     id: user.id,
     role: role as (typeof ROLES)[number],
     name,
+    username,
     birth_year: birthYear,
     status,
     postal_code: postalCode,
@@ -102,10 +119,12 @@ export async function completeOnboarding(formData: FormData): Promise<ActionResu
     avatar_path: ownAvatarPath(formData.get('avatar_path'), user.id),
   })
 
-  // Already onboarded — a second tab, or the back button. Not an error worth
-  // showing; they belong in the app.
-  if (error?.code === '23505') redirect('/discover')
-  if (error) return { error: error.message }
+  if (error) {
+    if (error.code === '23505') {
+      return { error: 'Dieser Nutzername ist bereits vergeben. Bitte wählen Sie einen anderen.' }
+    }
+    return { error: error.message }
+  }
 
   refresh()
   redirect('/discover')
@@ -130,6 +149,12 @@ export async function updateMyCard(formData: FormData): Promise<ActionResult> {
   const description = String(formData.get('description') ?? '').trim()
   if (!availability || !description) {
     return { error: 'Verfügbarkeit und Beschreibung dürfen nicht leer sein.' }
+  }
+  if (availability.length > MAX_AVAILABILITY_LENGTH) {
+    return { error: `Die Verfügbarkeit darf höchstens ${MAX_AVAILABILITY_LENGTH} Zeichen lang sein.` }
+  }
+  if (description.length > MAX_DESCRIPTION_LENGTH) {
+    return { error: `Die Beschreibung darf höchstens ${MAX_DESCRIPTION_LENGTH} Zeichen lang sein.` }
   }
 
   const { error } = await supabase.from('offers').upsert(

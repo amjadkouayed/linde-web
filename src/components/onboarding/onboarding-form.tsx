@@ -27,6 +27,7 @@ export function OnboardingForm() {
   const [step, setStep] = useState(1)
   const [role, setRole] = useState<Role | null>(null)
   const [name, setName] = useState('')
+  const [username, setUsername] = useState('')
   const [age, setAge] = useState('')
   const [postalCode, setPostalCode] = useState('')
   const [city, setCity] = useState('')
@@ -43,6 +44,9 @@ export function OnboardingForm() {
     if (step === 1 && !role) return setError('Bitte wählen Sie aus, wer Sie sind.')
     if (step === 2) {
       if (!name.trim()) return setError('Bitte geben Sie Ihren Namen an.')
+      if (!/^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?$/.test(username.trim().toLowerCase())) {
+        return setError('Bitte wählen Sie einen Nutzernamen mit 3 bis 30 Zeichen.')
+      }
       if (!/^\d{1,3}$/.test(age) || Number(age) < 16 || Number(age) > 120) {
         return setError('Bitte geben Sie ein Alter zwischen 16 und 120 an.')
       }
@@ -60,6 +64,7 @@ export function OnboardingForm() {
       const formData = new FormData()
       formData.set('role', role ?? '')
       formData.set('name', name.trim())
+      formData.set('username', username.trim().toLowerCase())
       formData.set('age', age)
       formData.set('postal_code', postalCode)
       formData.set('city', city.trim())
@@ -131,6 +136,18 @@ export function OnboardingForm() {
               autoComplete="given-name"
               value={name}
               onChange={(event) => setName(event.target.value)}
+              className={inputClass}
+            />
+          </Field>
+
+          <Field label="Ihr Nutzername" hint="Dieser Name steht später in Ihrem Link, zum Beispiel helga-b. Nur a–z, 0–9 und Bindestriche.">
+            <input
+              id="username"
+              autoComplete="username"
+              value={username}
+              onChange={(event) =>
+                setUsername(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 30))
+              }
               className={inputClass}
             />
           </Field>

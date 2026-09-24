@@ -28,6 +28,14 @@ const GOOGLE_ENABLED = false
 const MIN_CODE_LENGTH = 6
 const MAX_CODE_LENGTH = 10
 
+function normalizeEmail(value: string) {
+  return value.trim().toLowerCase()
+}
+
+function isValidEmail(value: string) {
+  return value.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+}
+
 /** Sent here by /auth/confirm when a link in an e-mail could not be used. */
 const LINK_ERRORS: Record<string, string> = {
   abgelaufen: 'Dieser Link ist abgelaufen. Fordern Sie bitte einen neuen Code an.',
@@ -46,23 +54,44 @@ export function LoginForm() {
   const [pending, startTransition] = useTransition()
 
   function requestCode() {
+    const normalizedEmail = normalizeEmail(email)
+    if (!isValidEmail(normalizedEmail)) {
+      setError('Bitte geben Sie eine gültige E-Mail-Adresse ein, zum Beispiel test@example.com.')
+      return
+    }
+
     setError(null)
+    setEmail(normalizedEmail)
     startTransition(async () => {
       const supabase = createClient()
       const { error } = await supabase.auth.signInWithOtp({
-        email,
+        email: normalizedEmail,
         options: { shouldCreateUser: true },
       })
-      if (error) setError(error.message)
+      if (error) {
+        setError('Der Anmeldecode konnte nicht gesendet werden. Bitte prüfen Sie die E-Mail-Adresse und versuchen Sie es erneut.')
+      }
       else setStep('code')
     })
   }
 
   function verifyCode() {
+    const normalizedEmail = normalizeEmail(email)
+    if (!isValidEmail(normalizedEmail)) {
+      setError('Bitte geben Sie eine gültige E-Mail-Adresse ein.')
+      setStep('email')
+      return
+    }
+
     setError(null)
+    setEmail(normalizedEmail)
     startTransition(async () => {
       const supabase = createClient()
-      const { error } = await supabase.auth.verifyOtp({ email, token: code, type: 'email' })
+      const { error } = await supabase.auth.verifyOtp({
+        email: normalizedEmail,
+        token: code,
+        type: 'email',
+      })
       if (error) {
         setError('Der Code stimmt nicht. Bitte prüfen Sie ihn noch einmal.')
         return
@@ -115,7 +144,9 @@ export function LoginForm() {
               required
               placeholder="name@beispiel.de"
               value={email}
-              onChange={(event) => setEmail(event.target.value.trim())}
+              onChange={(event) => setEmail(event.target.value)}
+              onBlur={() => setEmail(normalizeEmail(email))}
+              aria-invalid={error ? 'true' : undefined}
               className="rounded-input border-2 border-control bg-raised px-4 py-4 text-[20px] focus:border-brand focus:outline-none"
             />
           </div>

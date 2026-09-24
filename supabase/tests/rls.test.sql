@@ -63,15 +63,15 @@ values ('00000000-0000-0000-0000-000000000000',
 
 select tests_as('99999999-9999-9999-9999-999999999999');
 select lives_ok(
-  $$insert into public.profiles (id, role, name, birth_year, postal_code, city) values
-    ('99999999-9999-9999-9999-999999999999', 'student', 'Neue Nutzerin', 2003,
+  $$insert into public.profiles (id, username, role, name, birth_year, postal_code, city) values
+    ('99999999-9999-9999-9999-999999999999', 'neue-nutzerin', 'student', 'Neue Nutzerin', 2003,
      '49074', 'Osnabrück')$$,
   'a new user can create their own profile'
 );
 
 select throws_ok(
-  $$insert into public.profiles (id, role, name, birth_year, postal_code, city) values
-    ('88888888-8888-8888-8888-888888888888', 'student', 'Gestohlen', 2003,
+  $$insert into public.profiles (id, username, role, name, birth_year, postal_code, city) values
+    ('88888888-8888-8888-8888-888888888888', 'gestohlen', 'student', 'Gestohlen', 2003,
      '49074', 'Osnabrück')$$,
   -- Any error: the WITH CHECK and the foreign key both refuse this, and which
   -- fires first is not guaranteed.

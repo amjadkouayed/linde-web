@@ -57,8 +57,7 @@ export async function sendConnectionRequest(
     return { error: error.message }
   }
 
-  refresh()
-  return { error: null }
+  redirect('/discover?request=sent')
 }
 
 export async function answerConnectionRequest(
