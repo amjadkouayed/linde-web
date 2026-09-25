@@ -25,12 +25,9 @@ import type { Database, Tables } from '@/lib/supabase/database.types'
 // because Postgres cannot prove otherwise through a view.
 export type Profile = Tables<'profiles'>
 export type Offer = Tables<'offers'>
-export type DiscoverCard = Tables<'discover_feed'>
 export type OfferStats = Tables<'my_offer_stats'>
 /** A discover card with an approximate distance attached. */
-export type NearbyCard = Database['public']['Functions']['discover']['Returns'][number] & {
-  username: string
-}
+export type NearbyCard = Database['public']['Functions']['discover']['Returns'][number]
 export type RequestCard = {
   profile_id: string
   name: string
@@ -131,19 +128,7 @@ export async function searchNearby(plz: string, radiusKm: number): Promise<Nearb
   })
 
   if (error) throw error
-  const cards = data ?? []
-  if (cards.length === 0) return []
-
-  const { data: profiles } = await supabase
-    .from('profiles')
-    .select('id, username')
-    .in('id', cards.map((card) => card.profile_id))
-
-  const usernames = new Map((profiles ?? []).map((profile) => [profile.id, profile.username]))
-  return cards.flatMap((card) => {
-    const username = usernames.get(card.profile_id)
-    return username ? [{ ...card, username }] : []
-  })
+  return data ?? []
 }
 
 /** Views this week and open requests, for "Mein Angebot". */
@@ -157,30 +142,9 @@ export async function getMyOfferStats(): Promise<OfferStats | null> {
 }
 
 /**
- * Discover feed — one query, no N+1, nothing to filter client-side. The
- * discover_feed view already restricts this to published cards of the opposite
- * role that the caller has no connection with, and deliberately does not expose
- * coordinates.
- */
-export async function getDiscoverCard(profileId: string): Promise<DiscoverCard | null> {
-  const supabase = await createClient()
-
-  // Reading the person out of the feed rather than from profiles keeps one rule
-  // in one place: if they are not in your feed, you may not ask them. The view
-  // does that filtering, so an ineligible id simply comes back empty.
-  const { data } = await supabase
-    .from('discover_feed')
-    .select('*')
-    .eq('profile_id', profileId)
-    .maybeSingle()
-
-  return data
-}
-
-/**
- * The request screen must keep rendering after the request is submitted.
- * `discover_feed` intentionally removes connected people, so it cannot also
- * be the source for this detail page once the connection row exists.
+ * The request screen, by username. Read from profiles rather than
+ * discover_feed so the page still opens once a request exists; the caller
+ * checks the role, and app.can_connect refuses anyone ineligible anyway.
  */
 export async function getRequestCard(profileId: string): Promise<RequestCard | null> {
   const supabase = await createClient()

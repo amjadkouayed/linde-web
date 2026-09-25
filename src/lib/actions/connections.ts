@@ -3,6 +3,7 @@
 import { refresh } from 'next/cache'
 import { redirect } from 'next/navigation'
 
+import { friendlyError } from '@/lib/errors'
 import { createClient } from '@/lib/supabase/server'
 
 import type { Message } from '@/lib/data/connections'
@@ -52,9 +53,9 @@ export async function sendConnectionRequest(
     // The unique index on the profile pair is what makes a duplicate request
     // impossible in either direction.
     if (error.code === '23505') {
-      return { error: 'Du hast dieser Person bereits eine Anfrage geschickt.' }
+      return { error: 'Sie haben dieser Person bereits eine Anfrage geschickt.' }
     }
-    return { error: error.message }
+    return { error: friendlyError(error) }
   }
 
   redirect('/discover?request=sent')
@@ -71,7 +72,7 @@ export async function answerConnectionRequest(
     .update({ status: accept ? 'accepted' : 'declined' })
     .eq('id', connectionId)
 
-  if (error) return { error: error.message }
+  if (error) return { error: friendlyError(error) }
 
   refresh()
   return { error: null }
@@ -82,7 +83,7 @@ export async function withdrawConnectionRequest(connectionId: string): Promise<A
   const { supabase } = await requireSession()
 
   const { error } = await supabase.from('connections').delete().eq('id', connectionId)
-  if (error) return { error: error.message }
+  if (error) return { error: friendlyError(error) }
 
   refresh()
   return { error: null }
@@ -110,7 +111,7 @@ export async function sendMessage(
     .select()
     .single()
 
-  if (error) return { error: error.message }
+  if (error) return { error: friendlyError(error) }
 
   refresh()
   return { error: null, message: data }
@@ -131,7 +132,7 @@ export async function markConversationRead(connectionId: string): Promise<Action
     .neq('sender_id', userId)
     .is('read_at', null)
 
-  if (error) return { error: error.message }
+  if (error) return { error: friendlyError(error) }
 
   refresh()
   return { error: null }

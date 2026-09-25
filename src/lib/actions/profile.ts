@@ -3,6 +3,7 @@
 import { refresh } from 'next/cache'
 import { redirect } from 'next/navigation'
 
+import { friendlyError } from '@/lib/errors'
 import { createClient } from '@/lib/supabase/server'
 
 /**
@@ -16,11 +17,10 @@ export type ActionResult = { error: string | null }
 const ROLES = ['student', 'senior'] as const
 const SENIOR_STATUSES = ['rentner', 'rentnerin', 'berufstaetig'] as const
 
-// The database only bounds birth_year for sanity — anything involving the
-// current year is not immutable and cannot live in a CHECK without going stale.
-// The actual policy lives here.
-const MIN_AGE = 16
-const MAX_AGE = 120
+// The database enforces the same bounds with a trigger (0012); checking here
+// too gives a clear message instead of a refused insert.
+const MIN_AGE = 18
+const MAX_AGE = 100
 const MAX_AVAILABILITY_LENGTH = 500
 const MAX_DESCRIPTION_LENGTH = 1000
 
@@ -52,12 +52,12 @@ export async function completeOnboarding(formData: FormData): Promise<ActionResu
 
   const role = String(formData.get('role') ?? '')
   if (!ROLES.includes(role as (typeof ROLES)[number])) {
-    return { error: 'Bitte wähle aus, ob du Studierende:r oder Senior:in bist.' }
+    return { error: 'Bitte wählen Sie aus, ob Sie studieren oder Seniorin bzw. Senior sind.' }
   }
 
   const name = String(formData.get('name') ?? '').trim()
   if (!name) {
-    return { error: 'Bitte gib deinen Namen an.' }
+    return { error: 'Bitte geben Sie Ihren Namen an.' }
   }
   const username = String(formData.get('username') ?? '').trim().toLowerCase()
   if (!/^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?$/.test(username)) {
@@ -68,7 +68,7 @@ export async function completeOnboarding(formData: FormData): Promise<ActionResu
   // silently wrong from the person's next birthday onwards.
   const age = Number(formData.get('age'))
   if (!Number.isInteger(age) || age < MIN_AGE || age > MAX_AGE) {
-    return { error: `Bitte gib ein Alter zwischen ${MIN_AGE} und ${MAX_AGE} an.` }
+    return { error: `Bitte geben Sie ein Alter zwischen ${MIN_AGE} und ${MAX_AGE} an.` }
   }
   const birthYear = new Date().getFullYear() - age
 
@@ -84,11 +84,11 @@ export async function completeOnboarding(formData: FormData): Promise<ActionResu
   // has to be able to search. Postal code only — never a street or a number.
   const postalCode = String(formData.get('postal_code') ?? '').trim()
   if (!/^\d{5}$/.test(postalCode)) {
-    return { error: 'Bitte gib eine gültige fünfstellige Postleitzahl an.' }
+    return { error: 'Bitte geben Sie eine fünfstellige Postleitzahl an.' }
   }
   const city = String(formData.get('city') ?? '').trim()
   if (!city) {
-    return { error: 'Bitte gib deinen Ort an.' }
+    return { error: 'Bitte geben Sie Ihren Ort an.' }
   }
 
   const { data: existingProfile } = await supabase
@@ -123,7 +123,7 @@ export async function completeOnboarding(formData: FormData): Promise<ActionResu
     if (error.code === '23505') {
       return { error: 'Dieser Nutzername ist bereits vergeben. Bitte wählen Sie einen anderen.' }
     }
-    return { error: error.message }
+    return { error: friendlyError(error) }
   }
 
   refresh()
@@ -167,7 +167,7 @@ export async function updateMyCard(formData: FormData): Promise<ActionResult> {
     { onConflict: 'user_id' },
   )
 
-  if (error) return { error: error.message }
+  if (error) return { error: friendlyError(error) }
 
   // getCurrentProfile caches in the browser, so refresh the router to pick the
   // edit up immediately rather than waiting out its 30s stale window.
@@ -191,11 +191,11 @@ export async function updateMyLocation(formData: FormData): Promise<ActionResult
 
   const postalCode = String(formData.get('postal_code') ?? '').trim()
   if (!/^\d{5}$/.test(postalCode)) {
-    return { error: 'Bitte gib eine gültige fünfstellige Postleitzahl an.' }
+    return { error: 'Bitte geben Sie eine fünfstellige Postleitzahl an.' }
   }
   const city = String(formData.get('city') ?? '').trim()
   if (!city) {
-    return { error: 'Bitte gib deinen Ort an.' }
+    return { error: 'Bitte geben Sie Ihren Ort an.' }
   }
 
   const { error } = await supabase
@@ -203,7 +203,7 @@ export async function updateMyLocation(formData: FormData): Promise<ActionResult
     .update({ postal_code: postalCode, city })
     .eq('id', user.id)
 
-  if (error) return { error: error.message }
+  if (error) return { error: friendlyError(error) }
 
   refresh()
   return { error: null }
@@ -225,7 +225,7 @@ export async function deleteMyOffer(): Promise<ActionResult> {
   if (!user) redirect('/login')
 
   const { error } = await supabase.from('offers').delete().eq('user_id', user.id)
-  if (error) return { error: error.message }
+  if (error) return { error: friendlyError(error) }
 
   refresh()
   return { error: null }
@@ -282,7 +282,7 @@ export async function updateMyAvatar(path: string): Promise<ActionResult> {
   const { data: before } = await supabase.from('profiles').select('avatar_path').eq('id', user.id).maybeSingle()
 
   const { error } = await supabase.from('profiles').update({ avatar_path: next }).eq('id', user.id)
-  if (error) return { error: error.message }
+  if (error) return { error: friendlyError(error) }
 
   if (before?.avatar_path && before.avatar_path !== next) {
     await supabase.storage.from('avatars').remove([before.avatar_path])
@@ -304,7 +304,7 @@ export async function removeMyAvatar(): Promise<ActionResult> {
   const { data: before } = await supabase.from('profiles').select('avatar_path').eq('id', user.id).maybeSingle()
 
   const { error } = await supabase.from('profiles').update({ avatar_path: null }).eq('id', user.id)
-  if (error) return { error: error.message }
+  if (error) return { error: friendlyError(error) }
 
   if (before?.avatar_path) await supabase.storage.from('avatars').remove([before.avatar_path])
 
