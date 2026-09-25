@@ -50,19 +50,20 @@ async function Thread({ params }: { params: Params }) {
         </div>
       </div>
 
-      {/* Stays once the chat starts: it is how the conversation began. */}
-      {connection.intro_message && (
-        <div className="flex flex-col gap-1.5 rounded-card border border-line bg-tag p-4">
-          <span className="text-[15px] font-bold text-muted">
-            {connection.i_am_requester
-              ? 'Ihre Anfrage'
-              : `Anfrage von ${(connection.other_name ?? '').split(' ')[0]}`}
-          </span>
-          <p className="text-pretty text-[18px] leading-relaxed">{connection.intro_message}</p>
-        </div>
-      )}
-
-      <Chat connectionId={connection.connection_id} myProfileId={profile.id} initialMessages={messages} />
+      <Chat
+        connectionId={connection.connection_id}
+        myProfileId={profile.id}
+        initialMessages={messages}
+        intro={
+          connection.intro_message
+            ? {
+                body: connection.intro_message,
+                mine: !!connection.i_am_requester,
+                at: connection.created_at ?? '',
+              }
+            : null
+        }
+      />
 
       <p className="rounded-card border border-line bg-raised p-4 text-[16px] leading-relaxed text-muted">
         Termine vereinbaren Sie hier im Chat. Treffen Sie sich beim ersten Mal an einem
