@@ -47,8 +47,8 @@ export function OnboardingForm() {
       if (!/^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?$/.test(username.trim().toLowerCase())) {
         return setError('Bitte wählen Sie einen Nutzernamen mit 3 bis 30 Zeichen.')
       }
-      if (!/^\d{1,3}$/.test(age) || Number(age) < 16 || Number(age) > 120) {
-        return setError('Bitte geben Sie ein Alter zwischen 16 und 120 an.')
+      if (!/^\d{1,3}$/.test(age) || Number(age) < 18 || Number(age) > 100) {
+        return setError('Bitte geben Sie ein Alter zwischen 18 und 100 an.')
       }
       if (!/^\d{5}$/.test(postalCode)) {
         return setError('Bitte geben Sie eine fünfstellige Postleitzahl an.')
@@ -76,7 +76,10 @@ export function OnboardingForm() {
 
       // On success the action redirects to /discover itself.
       const result = await completeOnboarding(formData)
-      if (result?.error) setError(result.error)
+      if (result?.error) {
+        setError(result.error)
+        if (result.error.includes('Nutzername')) setStep(2)
+      }
     })
   }
 
@@ -133,6 +136,7 @@ export function OnboardingForm() {
           <Field label="Ihr Name" hint="Zum Beispiel „Helga B.“ — Ihr Nachname muss nicht sichtbar sein.">
             <input
               id="name"
+              maxLength={80}
               autoComplete="given-name"
               value={name}
               onChange={(event) => setName(event.target.value)}
@@ -176,6 +180,7 @@ export function OnboardingForm() {
           <Field label="Ihr Ort">
             <input
               id="city"
+              maxLength={120}
               autoComplete="address-level2"
               value={city}
               onChange={(event) => setCity(event.target.value)}
@@ -187,6 +192,7 @@ export function OnboardingForm() {
             <Field label="Was studieren Sie?">
               <input
                 id="study_field"
+                maxLength={120}
                 value={studyField}
                 onChange={(event) => setStudyField(event.target.value)}
                 placeholder="z. B. Informatik"
@@ -221,6 +227,7 @@ export function OnboardingForm() {
           <Field label="Ein paar Sätze über Sie" hint="Wenn Sie möchten, können Sie hier auch Ihr Alter nennen.">
             <textarea
               id="bio"
+              maxLength={1000}
               rows={4}
               value={bio}
               onChange={(event) => setBio(event.target.value)}

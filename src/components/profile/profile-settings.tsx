@@ -121,6 +121,7 @@ function Location({ postalCode, city }: { postalCode: string | null; city: strin
             </label>
             <input
               id="city"
+              maxLength={120}
               name="city"
               required
               defaultValue={city ?? ''}
