@@ -11,14 +11,19 @@ import type { Message } from '@/lib/data/connections'
  * polling, and sending goes through the server action so the insert is checked
  * by RLS like everything else.
  */
+/** The greeting sent with the request: the first thing said, so it opens the thread. */
+type Intro = { body: string; mine: boolean; at: string }
+
 export function Chat({
   connectionId,
   myProfileId,
   initialMessages,
+  intro,
 }: {
   connectionId: string
   myProfileId: string
   initialMessages: Message[]
+  intro: Intro | null
 }) {
   const [messages, setMessages] = useState(initialMessages)
   const [body, setBody] = useState('')
@@ -132,26 +137,17 @@ export function Chat({
         aria-live="polite"
         className="flex max-h-[55vh] flex-col gap-3 overflow-y-auto rounded-card border border-line bg-surface p-4"
       >
-        {messages.length === 0 && (
-          <p className="rounded-card border border-line bg-raised p-6 text-[18px] leading-relaxed">
+        {intro && <Bubble mine={intro.mine} body={intro.body} at={intro.at} note="mit der Anfrage" />}
+
+        {!intro && messages.length === 0 && (
+          <p className="px-2 py-6 text-center text-[18px] leading-relaxed text-muted">
             Noch keine Nachrichten. Schreiben Sie die erste.
           </p>
         )}
 
-        {messages.map((m) => {
-          const mine = m.sender_id === myProfileId
-          return (
-            <div key={m.id} className={mine ? 'flex justify-end' : 'flex justify-start'}>
-              <p
-                className={`max-w-[80%] text-pretty rounded-card px-4 py-3 text-[18px] leading-relaxed ${
-                  mine ? 'bg-brand text-surface' : 'border border-line bg-raised text-ink'
-                }`}
-              >
-                {m.body}
-              </p>
-            </div>
-          )
-        })}
+        {messages.map((m) => (
+          <Bubble key={m.id} mine={m.sender_id === myProfileId} body={m.body} at={m.created_at} />
+        ))}
       </div>
 
       {error && (
@@ -176,6 +172,20 @@ export function Chat({
           maxLength={2000}
           value={body}
           onChange={(event) => setBody(event.target.value)}
+          onKeyDown={(event) => {
+            // Enter sends on a computer, Shift+Enter makes a new line. On a
+            // touch keyboard Enter stays a line break: there it is too easy
+            // to hit by accident, and the button is right there.
+            if (
+              event.key === 'Enter' &&
+              !event.shiftKey &&
+              !event.nativeEvent.isComposing &&
+              window.matchMedia('(pointer: fine)').matches
+            ) {
+              event.preventDefault()
+              submit()
+            }
+          }}
           placeholder="Nachricht schreiben …"
           className="resize-none rounded-input border-2 border-control bg-raised px-4 py-3.5 text-[18px] leading-relaxed focus:border-brand focus:outline-none"
         />
@@ -189,6 +199,43 @@ export function Chat({
       </form>
     </div>
   )
+}
+
+function Bubble({ mine, body, at, note }: { mine: boolean; body: string; at: string; note?: string }) {
+  return (
+    <div className={`flex flex-col gap-1 ${mine ? 'items-end' : 'items-start'}`}>
+      <p
+        className={`max-w-[80%] whitespace-pre-line text-pretty rounded-card px-4 py-3 text-[18px] leading-relaxed ${
+          mine ? 'bg-brand text-surface' : 'border border-line bg-raised text-ink'
+        }`}
+      >
+        {body}
+      </p>
+      {/* Server and browser can disagree on "today" around midnight; the
+          browser's rendering wins without a hydration error. */}
+      <time dateTime={at} suppressHydrationWarning className="px-1 text-[14px] text-muted">
+        {when(at)}
+        {note ? ` · ${note}` : ''}
+      </time>
+    </div>
+  )
+}
+
+// Linde is German-only, so German time: fixed rather than the server's UTC,
+// which would put every message an hour or two early.
+const TIME = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' })
+const DAY = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', weekday: 'short', day: '2-digit', month: '2-digit' })
+const DATE_KEY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' })
+
+/** "14:32", "gestern, 14:32" or "Mo., 22.09., 14:32". */
+function when(iso: string): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+  const day = DATE_KEY.format(date)
+  const today = DATE_KEY.format(new Date())
+  const yesterday = DATE_KEY.format(new Date(Date.now() - 86_400_000))
+  const prefix = day === today ? '' : day === yesterday ? 'gestern, ' : `${DAY.format(date)}, `
+  return prefix + TIME.format(date)
 }
 
 /** Union by id, oldest first — Realtime, the action and the server can all report the same message. */

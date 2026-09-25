@@ -51,12 +51,13 @@ export function LoginForm() {
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
   const [error, setError] = useState<string | null>(LINK_ERRORS[params.get('fehler') ?? ''] ?? null)
+  const [resent, setResent] = useState(false)
   const [pending, startTransition] = useTransition()
 
   function requestCode() {
     const normalizedEmail = normalizeEmail(email)
     if (!isValidEmail(normalizedEmail)) {
-      setError('Bitte geben Sie eine gültige E-Mail-Adresse ein, zum Beispiel test@example.com.')
+      setError('Bitte geben Sie eine gültige E-Mail-Adresse ein, zum Beispiel name@beispiel.de.')
       return
     }
 
@@ -95,9 +96,16 @@ export function LoginForm() {
         options: { shouldCreateUser: true },
       })
       if (error) {
-        setError('Der Anmeldecode konnte nicht gesendet werden. Bitte prüfen Sie die E-Mail-Adresse und versuchen Sie es erneut.')
+        // Supabase allows one code per address a minute.
+        setError(
+          error.status === 429
+            ? 'Bitte warten Sie eine Minute, bevor Sie einen neuen Code anfordern.'
+            : 'Der Anmeldecode konnte nicht gesendet werden. Bitte prüfen Sie die E-Mail-Adresse und versuchen Sie es erneut.',
+        )
+        return
       }
-      else setStep('code')
+      setResent(step === 'code')
+      setStep('code')
     })
   }
 
@@ -226,6 +234,11 @@ export function LoginForm() {
           </p>
 
           {error && <ErrorNote>{error}</ErrorNote>}
+          {resent && !error && (
+            <p role="status" className="text-[17px] font-bold text-brand-pressed">
+              Ein neuer Code ist unterwegs.
+            </p>
+          )}
 
           <button
             type="submit"
@@ -237,10 +250,23 @@ export function LoginForm() {
 
           <button
             type="button"
+            disabled={pending}
+            onClick={() => {
+              setCode('')
+              requestCode()
+            }}
+            className="press min-h-[56px] rounded-button border-2 border-control bg-raised text-[18px] font-bold text-ink disabled:opacity-60"
+          >
+            Neuen Code schicken
+          </button>
+
+          <button
+            type="button"
             onClick={() => {
               setStep('email')
               setCode('')
               setError(null)
+              setResent(false)
             }}
             className="press min-h-[52px] text-[17px] font-bold text-muted underline"
           >

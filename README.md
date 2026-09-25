@@ -139,6 +139,9 @@ Rules worth knowing before you write a query:
   action in `src/lib/actions/` re-reads the session itself.
 - Helpers in the private `app` schema are `SECURITY DEFINER` and always called wrapped —
   `(select app.foo())` — so Postgres evaluates them once per statement, not once per row.
+- The database enforces its own limits (`0012_limits.sql`), because PostgREST is reachable without
+  the web app: age 18–100, 20 requests an hour, 30 messages a minute (HTTP 429), avatars JPEG only
+  up to 512 KB. Actions show `friendlyError()` instead of raw database messages.
 - After changing any policy, helper or trigger: `npm run db:test`.
 
 ### One round trip per screen

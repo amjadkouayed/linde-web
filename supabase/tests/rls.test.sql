@@ -19,7 +19,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(33);
+select plan(36);
 
 create function tests_as(p_user uuid) returns void
 language plpgsql
@@ -368,6 +368,33 @@ select is(
   (select count(*)::int from public.offer_views where viewed_on = current_date - 89),
   1,
   'offer views inside 90 days are kept'
+);
+
+
+-- ---------------------------------------------------------------------------
+-- Limits (0012)
+-- ---------------------------------------------------------------------------
+
+select tests_as('11111111-1111-1111-1111-111111111111');
+select throws_ok(
+  $$update public.profiles set birth_year = extract(year from now())::int - 17
+    where id = '11111111-1111-1111-1111-111111111111'$$,
+  '23514', null,
+  'nobody under 18 can be on Linde, even by writing to the table directly'
+);
+
+select tests_as('22222222-2222-2222-2222-222222222222');
+select throws_ok(
+  $$insert into public.messages (connection_id, sender_id, body)
+    select 'bbbbbbbb-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222', 'spam'
+    from generate_series(1, 40)$$,
+  'PT429', null,
+  'a burst of messages is refused with HTTP 429'
+);
+
+select ok(
+  exists (select 1 from public.discover('49080', 50) where username = 'werner-pohl'),
+  'discover() returns the username the card links by'
 );
 
 

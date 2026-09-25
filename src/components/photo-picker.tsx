@@ -94,7 +94,7 @@ export function PhotoPicker({
             type="button"
             disabled={busy}
             onClick={() => input.current?.click()}
-            className="press min-h-[52px] rounded-button border-2 border-control bg-raised px-5 text-[17px] font-bold text-ink disabled:opacity-60"
+            className="press min-h-[52px] whitespace-nowrap rounded-button border-2 border-control bg-raised px-5 text-[17px] font-bold text-ink disabled:opacity-60"
           >
             {busy ? 'Wird hochgeladen …' : path ? 'Foto ändern' : 'Foto auswählen'}
           </button>
@@ -107,7 +107,7 @@ export function PhotoPicker({
       </div>
 
       <p className="text-[16px] leading-relaxed text-muted">
-        Ein freundliches Foto erhöht die Antworten deutlich. Es ist freiwillig.
+        Mit einem freundlichen Foto antworten Ihnen andere leichter. Es ist freiwillig.
       </p>
 
       {error && (

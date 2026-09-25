@@ -4,13 +4,9 @@ import { useState, useTransition } from 'react'
 
 import { PhotoPicker } from '@/components/photo-picker'
 import { completeOnboarding } from '@/lib/actions/profile'
+import { INTERESTS } from '@/lib/labels'
 
 type Role = 'student' | 'senior'
-
-const INTERESTS: Record<Role, string[]> = {
-  student: ['Deutsch üben', 'Kochen', 'Musik', 'Geschichte', 'Spazieren', 'Schach', 'Technikhilfe'],
-  senior: ['Deutsch beibringen', 'Backen', 'Erzählen', 'Karten spielen', 'Kino', 'Spazieren', 'Musik'],
-}
 
 const STATUSES = [
   { value: 'rentnerin', label: 'Rentnerin' },
@@ -47,8 +43,8 @@ export function OnboardingForm() {
       if (!/^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?$/.test(username.trim().toLowerCase())) {
         return setError('Bitte wählen Sie einen Nutzernamen mit 3 bis 30 Zeichen.')
       }
-      if (!/^\d{1,3}$/.test(age) || Number(age) < 16 || Number(age) > 120) {
-        return setError('Bitte geben Sie ein Alter zwischen 16 und 120 an.')
+      if (!/^\d{1,3}$/.test(age) || Number(age) < 18 || Number(age) > 100) {
+        return setError('Bitte geben Sie ein Alter zwischen 18 und 100 an.')
       }
       if (!/^\d{5}$/.test(postalCode)) {
         return setError('Bitte geben Sie eine fünfstellige Postleitzahl an.')
@@ -76,7 +72,10 @@ export function OnboardingForm() {
 
       // On success the action redirects to /discover itself.
       const result = await completeOnboarding(formData)
-      if (result?.error) setError(result.error)
+      if (result?.error) {
+        setError(result.error)
+        if (result.error.includes('Nutzername')) setStep(2)
+      }
     })
   }
 
@@ -112,7 +111,7 @@ export function OnboardingForm() {
             />
           </div>
           <p className="text-[17px] leading-relaxed text-muted">
-            Das legt fest, wen Sie in der App finden. Sie können es später nicht ändern.
+            Danach richtet sich, wen Sie bei Linde finden. Das lässt sich später nicht ändern.
           </p>
         </section>
       )}
@@ -133,6 +132,7 @@ export function OnboardingForm() {
           <Field label="Ihr Name" hint="Zum Beispiel „Helga B.“ — Ihr Nachname muss nicht sichtbar sein.">
             <input
               id="name"
+              maxLength={80}
               autoComplete="given-name"
               value={name}
               onChange={(event) => setName(event.target.value)}
@@ -140,7 +140,7 @@ export function OnboardingForm() {
             />
           </Field>
 
-          <Field label="Ihr Nutzername" hint="Dieser Name steht später in Ihrem Link, zum Beispiel helga-b. Nur a–z, 0–9 und Bindestriche.">
+          <Field label="Ihr Nutzername" hint="Unter diesem Namen findet man Ihr Angebot, zum Beispiel helga-b. Erlaubt sind kleine Buchstaben ohne ä, ö, ü und ß, Ziffern und Bindestriche.">
             <input
               id="username"
               autoComplete="username"
@@ -176,6 +176,7 @@ export function OnboardingForm() {
           <Field label="Ihr Ort">
             <input
               id="city"
+              maxLength={120}
               autoComplete="address-level2"
               value={city}
               onChange={(event) => setCity(event.target.value)}
@@ -187,6 +188,7 @@ export function OnboardingForm() {
             <Field label="Was studieren Sie?">
               <input
                 id="study_field"
+                maxLength={120}
                 value={studyField}
                 onChange={(event) => setStudyField(event.target.value)}
                 placeholder="z. B. Informatik"
@@ -218,9 +220,10 @@ export function OnboardingForm() {
         <section className="flex flex-col gap-5">
           <h1 className="font-serif text-[30px] font-bold">Über Sie</h1>
 
-          <Field label="Ein paar Sätze über Sie" hint="Wenn Sie möchten, können Sie hier auch Ihr Alter nennen.">
+          <Field label="Ein paar Sätze über Sie" hint="Was sollten andere über Sie wissen? Zum Beispiel Ihren Beruf, Ihre Heimat oder was Sie gern erzählen.">
             <textarea
               id="bio"
+              maxLength={1000}
               rows={4}
               value={bio}
               onChange={(event) => setBio(event.target.value)}

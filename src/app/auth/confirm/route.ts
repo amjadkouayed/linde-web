@@ -23,7 +23,8 @@ export async function GET(request: NextRequest) {
   const next = searchParams.get('next') ?? '/discover'
 
   // Never redirect to another site on someone else's say-so: only in-app paths.
-  const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : '/discover'
+  // Browsers read `/\evil.com` as `//evil.com`, so a backslash is refused too.
+  const safeNext = /^\/(?![/\\])/.test(next) ? next : '/discover'
 
   if (!tokenHash || !type) {
     redirect('/login?fehler=link')

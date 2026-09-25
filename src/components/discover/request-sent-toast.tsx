@@ -43,14 +43,10 @@ export function RequestSentToast() {
               Anfrage gesendet
             </h2>
             <p className="text-[18px] leading-relaxed">
-              Ihre Anfrage wurde erfolgreich gesendet.
+              Sobald die Person antwortet, sehen Sie es unter „Kontakte“.
             </p>
           </div>
         </div>
-
-        <p className="text-[17px] leading-relaxed text-muted">
-          Unter „Kontakte“ können Sie den Status Ihrer Anfrage sehen.
-        </p>
 
         <div className="flex flex-col gap-3 sm:flex-row-reverse">
           <Link

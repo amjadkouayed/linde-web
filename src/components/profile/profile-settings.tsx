@@ -7,23 +7,31 @@ import {
   deleteMyAccount,
   removeMyAvatar,
   signOut,
+  updateMyAbout,
   updateMyAvatar,
   updateMyLocation,
 } from '@/lib/actions/profile'
+import { INTERESTS } from '@/lib/labels'
 
 /**
- * Photo and location are editable here. Name, age and role are set once during
+ * Photo, bio, interests and location are editable here. Name, age and role are set once during
  * onboarding: they are what the other person recognises you by, and quietly
  * changing them after someone has agreed to meet you would be the wrong
  * affordance to hand out.
  */
 export function ProfileSettings({
   name,
+  role,
+  bio,
+  interests,
   avatarPath,
   postalCode,
   city,
 }: {
   name: string
+  role: string
+  bio: string | null
+  interests: string[]
   avatarPath: string | null
   postalCode: string | null
   city: string | null
@@ -44,6 +52,8 @@ export function ProfileSettings({
         />
       </section>
 
+      <About role={role} bio={bio} interests={interests} />
+
       <Location postalCode={postalCode} city={city} />
 
       <form action={signOut}>
@@ -57,6 +67,127 @@ export function ProfileSettings({
 
       <DeleteAccount />
     </div>
+  )
+}
+
+function About({ role, bio, interests }: { role: string; bio: string | null; interests: string[] }) {
+  const [editing, setEditing] = useState(false)
+  const [draftBio, setDraftBio] = useState(bio ?? '')
+  const [picked, setPicked] = useState(interests)
+  const [error, setError] = useState<string | null>(null)
+  const [pending, startTransition] = useTransition()
+
+  // Older profiles may hold interests that are no longer on the list; offer
+  // them too, so saving never silently drops one.
+  const options = [...new Set([...INTERESTS[role === 'senior' ? 'senior' : 'student'], ...interests])]
+
+  return (
+    <section className="flex flex-col gap-3 rounded-card border border-line bg-raised p-5">
+      <h2 className="font-serif text-[22px] font-bold">Über Sie</h2>
+
+      {!editing ? (
+        <>
+          {bio ? (
+            <p className="text-pretty text-[18px] leading-relaxed">{bio}</p>
+          ) : (
+            <p className="text-[17px] text-muted">Noch nichts geschrieben.</p>
+          )}
+          {interests.length > 0 && (
+            <ul className="flex flex-wrap gap-2">
+              {interests.map((interest) => (
+                <li key={interest} className="rounded-full bg-tag px-3.5 py-1.5 text-[16px] font-bold">
+                  {interest}
+                </li>
+              ))}
+            </ul>
+          )}
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="press min-h-[52px] self-start rounded-button border-2 border-control bg-surface px-5 text-[17px] font-bold text-ink"
+          >
+            Ändern
+          </button>
+        </>
+      ) : (
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={(event) => {
+            event.preventDefault()
+            setError(null)
+            const formData = new FormData()
+            formData.set('bio', draftBio)
+            formData.set('interests', picked.join(','))
+            startTransition(async () => {
+              const result = await updateMyAbout(formData)
+              if (result.error) setError(result.error)
+              else setEditing(false)
+            })
+          }}
+        >
+          <div className="flex flex-col gap-2">
+            <label htmlFor="bio" className="text-[17px] font-bold">
+              Ein paar Sätze über Sie
+            </label>
+            <textarea
+              id="bio"
+              rows={4}
+              maxLength={1000}
+              value={draftBio}
+              onChange={(event) => setDraftBio(event.target.value)}
+              className="resize-none rounded-input border-2 border-control bg-surface px-4 py-3.5 text-[18px] leading-relaxed focus:border-brand focus:outline-none"
+            />
+          </div>
+
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-2 text-[17px] font-bold">Was machen Sie gern?</legend>
+            <div className="flex flex-wrap gap-2.5">
+              {options.map((interest) => {
+                const active = picked.includes(interest)
+                return (
+                  <button
+                    key={interest}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() =>
+                      setPicked(active ? picked.filter((entry) => entry !== interest) : [...picked, interest])
+                    }
+                    className={`press min-h-[48px] rounded-full border-2 px-5 text-[17px] font-bold ${
+                      active ? 'border-brand bg-brand text-surface' : 'border-control bg-surface text-ink'
+                    }`}
+                  >
+                    {interest}
+                  </button>
+                )
+              })}
+            </div>
+          </fieldset>
+
+          {error && <ErrorNote>{error}</ErrorNote>}
+
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="submit"
+              disabled={pending}
+              className="press min-h-[56px] flex-1 rounded-button bg-brand text-[18px] font-bold text-surface disabled:opacity-60"
+            >
+              {pending ? 'Wird gespeichert …' : 'Speichern'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setDraftBio(bio ?? '')
+                setPicked(interests)
+                setEditing(false)
+              }}
+              className="press min-h-[56px] rounded-button border-2 border-control bg-surface px-6 text-[18px] font-bold text-ink"
+            >
+              Abbrechen
+            </button>
+          </div>
+        </form>
+      )}
+    </section>
   )
 }
 
@@ -121,6 +252,7 @@ function Location({ postalCode, city }: { postalCode: string | null; city: strin
             </label>
             <input
               id="city"
+              maxLength={120}
               name="city"
               required
               defaultValue={city ?? ''}
