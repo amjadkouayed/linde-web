@@ -20,30 +20,7 @@ export function RequestForm({
     `Guten Tag, ${firstName}! Ich würde Sie gern kennenlernen. Wann hätten Sie Zeit für einen Kaffee?`,
   )
   const [error, setError] = useState<string | null>(null)
-  const [sent, setSent] = useState(false)
   const [pending, startTransition] = useTransition()
-
-  if (sent) {
-    return (
-      <div role="status" className="flex flex-col items-center gap-4 text-center">
-        <span aria-hidden="true" className="flex h-[76px] w-[76px] items-center justify-center rounded-full bg-brand">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#F6F1E3" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M5 12.5l4.5 4.5L19 7.5" />
-          </svg>
-        </span>
-        <h2 className="font-serif text-[27px] font-bold">Anfrage gesendet</h2>
-        <p className="text-[18px] leading-relaxed">
-          Sobald {firstName} annimmt, finden Sie das Gespräch unter <strong>Kontakte</strong>.
-        </p>
-        <Link
-          href="/discover"
-          className="press flex min-h-[60px] w-full items-center justify-center rounded-button bg-brand text-[19px] font-bold text-surface no-underline"
-        >
-          Zurück zur Suche
-        </Link>
-      </div>
-    )
-  }
 
   return (
     <form
@@ -52,8 +29,8 @@ export function RequestForm({
         event.preventDefault()
         startTransition(async () => {
           const result = await sendConnectionRequest(recipientId, message)
-          if (result.error) setError(result.error)
-          else setSent(true)
+          // On success the action redirects to Discover, which confirms it.
+          if (result?.error) setError(result.error)
         })
       }}
     >

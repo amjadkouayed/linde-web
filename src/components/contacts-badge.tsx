@@ -22,7 +22,9 @@ export async function ContactsBadge() {
   return (
     <span
       aria-label={`${count} ${count === 1 ? 'neue Benachrichtigung' : 'neue Benachrichtigungen'}`}
-      className="flex h-6 min-w-6 items-center justify-center rounded-full bg-accent px-1.5 text-sm font-bold text-ink"
+      // On a phone the tab is a quarter of the screen: the badge sits on its corner
+      // instead of beside the word, which it would otherwise push out of the pill.
+      className="absolute -top-1 right-0 flex h-6 min-w-6 items-center justify-center rounded-full bg-accent px-1.5 text-sm font-bold text-ink md:static"
     >
       {count}
     </span>

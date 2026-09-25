@@ -32,7 +32,7 @@ export function OfferCard({ card }: { card: NearbyCard }) {
         <Avatar name={card.name} path={card.avatar_path} size={80} />
 
         <div className="flex min-w-0 flex-grow flex-col gap-1.5">
-          <div className="flex items-baseline justify-between gap-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
             <h2 className="font-serif text-2xl font-semibold">{card.name}</h2>
             {(distance ?? card.city) && (
               <span className="flex items-center gap-1.5 whitespace-nowrap text-[17px] font-bold text-muted">
@@ -45,9 +45,11 @@ export function OfferCard({ card }: { card: NearbyCard }) {
           {/* Handoff rule: age sits underneath the name, smaller and muted —
               never beside it. It shares the line with study field / status. */}
           {line && <span className="text-[16px] text-muted">{line}</span>}
-          {card.bio && <p className="text-pretty text-[18px] leading-relaxed">{card.bio}</p>}
         </div>
       </div>
+
+      {/* Full width, not beside the photo: in that column a phone fits three words a line. */}
+      {card.bio && <p className="text-pretty text-[18px] leading-relaxed">{card.bio}</p>}
 
       {card.description && (
         <p className="text-pretty text-[18px] leading-relaxed">{card.description}</p>

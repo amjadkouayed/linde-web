@@ -5,7 +5,12 @@ import { RedirectIfSignedIn } from '@/components/auth-redirect'
 import { LindeMark } from '@/components/linde-mark'
 
 // Only promise phone help once there is a number to ring.
-const PROMISES = ['Kostenlos', 'Kein Passwort nötig', ...(process.env.NEXT_PUBLIC_SUPPORT_PHONE ? ['Hilfe am Telefon'] : [])]
+const PROMISES = [
+  'Kostenlos',
+  'Ohne Passwort',
+  'Nur Postleitzahl, keine Adresse',
+  ...(process.env.NEXT_PUBLIC_SUPPORT_PHONE ? ['Hilfe am Telefon'] : []),
+]
 
 type Search = Promise<{ [key: string]: string | string[] | undefined }>
 
@@ -30,6 +35,9 @@ export default function Home({ searchParams }: { searchParams: Search }) {
           <span className="font-serif text-[30px] font-bold">Linde</span>
         </div>
 
+        {/* The project motto, spelled as the team writes it. */}
+        <p className="-mb-3 text-[18px] font-bold tracking-wide text-brand-pressed">Grenzen überWinden</p>
+
         <h1 className="text-pretty font-serif text-[42px] leading-[1.1] font-bold tracking-tight md:text-[56px]">
           Zeit teilen,
           <br />
@@ -39,8 +47,9 @@ export default function Home({ searchParams }: { searchParams: Search }) {
         </h1>
 
         <p className="max-w-[540px] text-pretty text-[21px] leading-relaxed">
-          Linde verbindet Seniorinnen und Senioren mit Studierenden aus der Nachbarschaft — für
-          Gespräche auf Deutsch, Gesellschaft und ein wenig Alltagshilfe.
+          Linde bringt Seniorinnen und Senioren mit Studierenden aus aller Welt zusammen, die in
+          ihrer Nähe wohnen: für Gespräche auf Deutsch, gemeinsame Zeit und ein wenig Hilfe im
+          Alltag. Zwei Generationen, viele Sprachen, eine Nachbarschaft.
         </p>
 
         <ul className="flex flex-wrap gap-3">
@@ -63,9 +72,9 @@ export default function Home({ searchParams }: { searchParams: Search }) {
           Los geht’s
         </Link>
         <p className="text-center text-[17px] leading-relaxed text-muted">
-          Für neue und bekannte Gesichter.
+          Ob neu oder schon dabei:
           <br />
-          Ein Passwort brauchen Sie nicht.
+          Sie brauchen nur Ihre E-Mail-Adresse.
         </p>
       </div>
     </main>

@@ -41,7 +41,7 @@ export function SiteNav({ active }: { active: NavKey }) {
                 key={item.key}
                 href={item.href}
                 aria-current={isActive ? 'page' : undefined}
-                className={`press flex min-h-[48px] items-center justify-center gap-1.5 rounded-full px-1.5 text-[15px] font-bold no-underline md:min-h-[52px] md:gap-2 md:px-5 md:text-[18px] ${
+                className={`press relative flex min-h-[48px] items-center justify-center gap-1.5 rounded-full px-1.5 text-[15px] font-bold no-underline md:min-h-[52px] md:gap-2 md:px-5 md:text-[18px] ${
                   isActive ? 'bg-brand text-surface' : 'text-ink hover:bg-tag'
                 }`}
               >

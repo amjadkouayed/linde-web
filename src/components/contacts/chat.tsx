@@ -133,7 +133,7 @@ export function Chat({
         className="flex max-h-[55vh] flex-col gap-3 overflow-y-auto rounded-card border border-line bg-surface p-4"
       >
         {messages.length === 0 && (
-          <p className="rounded-card border border-line bg-raised p-6 text-[18px] leading-relaxed">
+          <p className="px-2 py-6 text-center text-[18px] leading-relaxed text-muted">
             Noch keine Nachrichten. Schreiben Sie die erste.
           </p>
         )}

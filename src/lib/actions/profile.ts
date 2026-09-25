@@ -209,6 +209,31 @@ export async function updateMyLocation(formData: FormData): Promise<ActionResult
   return { error: null }
 }
 
+/** Bio and interests, editable in Profil. Name, age and role stay as onboarded. */
+export async function updateMyAbout(formData: FormData): Promise<ActionResult> {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const bio = String(formData.get('bio') ?? '').trim()
+  if (bio.length > 1000) {
+    return { error: 'Der Text über Sie darf höchstens 1000 Zeichen lang sein.' }
+  }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ bio: bio || null, interests: parseInterests(formData.get('interests')) })
+    .eq('id', user.id)
+
+  if (error) return { error: friendlyError(error) }
+
+  refresh()
+  return { error: null }
+}
+
 /**
  * Delete the caller's own card. RLS scopes the statement to their row, so the
  * .eq() is intent rather than protection. The screen confirms first: deleting

@@ -369,6 +369,7 @@ export type Database = {
           other_profile_id: string | null
           other_role: string | null
           other_status: string | null
+          other_username: string | null
           status: string | null
           unread_count: number | null
         }
