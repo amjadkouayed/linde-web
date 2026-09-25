@@ -18,6 +18,7 @@ const PUBLIC_PATHS = [
   '/login',
   '/signup',
   '/auth',
+  '/api/auth/showcase',
   '/impressum',
   '/datenschutz',
   '/nutzungsbedingungen',
