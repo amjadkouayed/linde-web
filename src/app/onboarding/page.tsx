@@ -3,7 +3,6 @@ import { Suspense } from 'react'
 import { RedirectIfOnboarded } from '@/components/auth-redirect'
 import { OnboardingForm } from '@/components/onboarding/onboarding-form'
 import { LindeMark } from '@/components/linde-mark'
-import { signOut } from '@/lib/actions/profile'
 
 /**
  * No navigation on this screen on purpose: until there is a profile there is
@@ -27,7 +26,7 @@ export default function OnboardingPage() {
 
       <OnboardingForm />
 
-      <form action={signOut} className="self-center">
+      <form method="post" action="/auth/signout" className="self-center">
         <button type="submit" className="press min-h-[48px] text-[17px] font-bold text-muted underline">
           Falsche E-Mail-Adresse? Abmelden
         </button>
