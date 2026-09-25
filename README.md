@@ -38,7 +38,7 @@ of these is which before you paste anything anywhere:
 | `NEXT_PUBLIC_SUPABASE_URL` | no | `.env.local`, Vercel env vars |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or `sb_publishable_…`) | no — designed to ship to the browser | same |
 | `RESEND_API_KEY` | **yes** | local `.env`; for cloud, Supabase dashboard → Auth → SMTP |
-| `service_role` / `sb_secret_…` | **yes** | nowhere — nothing in this app needs it |
+| `service_role` / `sb_secret_…` | **yes** | local/Vercel server environment only when showcase bypass is enabled |
 | database password | **yes** | Supabase dashboard only |
 
 The anon/publishable key is not a credential. It names the project and nothing else; row level
@@ -65,6 +65,20 @@ built-in sender cannot carry that on the free tier, for three independent reason
 
 So production needs custom SMTP. Locally none of this applies — mail goes to Mailpit on
 <http://localhost:54324>. See **Deploying → Email** below for the setup.
+
+### Showcase sign-in bypass
+
+For a temporary product showcase, set `SHOWCASE_REQUIRE_EMAIL_OTP=false` and provide
+`SUPABASE_SERVICE_ROLE_KEY` in the server environment. The login form then creates or confirms
+the user and signs them in without asking for an OTP. The bypass is disabled by default, is never
+read by client-side code.
+
+Set `SHOWCASE_REQUIRE_EMAIL_OTP=true` to restore the normal email-code flow. The default value is
+`false` for the showcase environment; use `true` for normal production deployments.
+
+The service-role key bypasses RLS and must never be exposed through `NEXT_PUBLIC_*`, committed to
+the repository, or shared in chat. Remove the key and disable the switch as soon as the showcase
+ends.
 
 ## Architecture
 
@@ -181,8 +195,10 @@ Vercel project:
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://prufsrctzkilvhmatymd.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | the project's **publishable** key (`sb_publishable_…`) |
 | `NEXT_PUBLIC_SUPPORT_PHONE` | optional — shows a phone help line on login and the welcome page |
+| `SHOWCASE_REQUIRE_EMAIL_OTP` | optional — `false` skips OTP, `true` requires the email code |
+| `SUPABASE_SERVICE_ROLE_KEY` | required when OTP is disabled; never expose client-side |
 
-Never the secret / service-role key — nothing in this app needs it, and it bypasses RLS.
+Never expose the secret / service-role key client-side: it bypasses RLS.
 
 ### Database — Supabase migrations
 
