@@ -41,7 +41,6 @@ async function Content() {
           <div className="flex flex-col gap-1">
             <span className="font-serif text-[25px] font-semibold">{profile.name}</span>
             <span className="text-[17px] text-muted">
-              {profile.role === 'student' ? 'Studierende:r' : 'Senior:in'} ·{' '}
               {personLine({ age, role: profile.role, studyField: profile.study_field, status: profile.status })}
             </span>
           </div>

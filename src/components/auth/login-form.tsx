@@ -57,7 +57,7 @@ export function LoginForm() {
   function requestCode() {
     const normalizedEmail = normalizeEmail(email)
     if (!isValidEmail(normalizedEmail)) {
-      setError('Bitte geben Sie eine gültige E-Mail-Adresse ein, zum Beispiel test@example.com.')
+      setError('Bitte geben Sie eine gültige E-Mail-Adresse ein, zum Beispiel name@beispiel.de.')
       return
     }
 

@@ -107,7 +107,7 @@ export function PhotoPicker({
       </div>
 
       <p className="text-[16px] leading-relaxed text-muted">
-        Ein freundliches Foto erhöht die Antworten deutlich. Es ist freiwillig.
+        Mit einem freundlichen Foto antworten Ihnen andere leichter. Es ist freiwillig.
       </p>
 
       {error && (

@@ -20,7 +20,8 @@ const karla = Karla({
 
 export const metadata: Metadata = {
   title: 'Linde',
-  description: 'Linde verbindet Seniorinnen und Senioren mit Studierenden.',
+  description:
+    'Grenzen überWinden: Linde bringt Seniorinnen und Senioren mit Studierenden aus ihrer Nachbarschaft zusammen.',
 }
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {

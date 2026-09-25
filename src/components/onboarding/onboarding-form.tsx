@@ -111,7 +111,7 @@ export function OnboardingForm() {
             />
           </div>
           <p className="text-[17px] leading-relaxed text-muted">
-            Das legt fest, wen Sie in der App finden. Sie können es später nicht ändern.
+            Danach richtet sich, wen Sie bei Linde finden. Das lässt sich später nicht ändern.
           </p>
         </section>
       )}
@@ -140,7 +140,7 @@ export function OnboardingForm() {
             />
           </Field>
 
-          <Field label="Ihr Nutzername" hint="Dieser Name steht später in Ihrem Link, zum Beispiel helga-b. Nur a–z, 0–9 und Bindestriche.">
+          <Field label="Ihr Nutzername" hint="Unter diesem Namen findet man Ihr Angebot, zum Beispiel helga-b. Erlaubt sind kleine Buchstaben ohne ä, ö, ü und ß, Ziffern und Bindestriche.">
             <input
               id="username"
               autoComplete="username"
@@ -220,7 +220,7 @@ export function OnboardingForm() {
         <section className="flex flex-col gap-5">
           <h1 className="font-serif text-[30px] font-bold">Über Sie</h1>
 
-          <Field label="Ein paar Sätze über Sie" hint="Wenn Sie möchten, können Sie hier auch Ihr Alter nennen.">
+          <Field label="Ein paar Sätze über Sie" hint="Was sollten andere über Sie wissen? Zum Beispiel Ihren Beruf, Ihre Heimat oder was Sie gern erzählen.">
             <textarea
               id="bio"
               maxLength={1000}

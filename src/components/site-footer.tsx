@@ -9,7 +9,7 @@ export function SiteFooter() {
   return (
     <footer className="mt-auto border-t border-line px-6 py-7">
       <nav className="mx-auto flex w-full max-w-[1080px] flex-wrap items-center gap-x-6 gap-y-3 text-[16px] text-muted">
-        <span>Linde</span>
+        <span>Linde · Grenzen überWinden</span>
         <Link href="/impressum" className="underline">
           Impressum
         </Link>

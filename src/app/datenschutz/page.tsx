@@ -35,8 +35,8 @@ export default function DatenschutzPage() {
           einen Anmeldecode. Ein Passwort gibt es nicht.
         </li>
         <li>
-          <strong>Ihr Profil:</strong> Name, Geburtsjahr, ob Sie Senior:in oder Studierende:r sind,
-          bei Senior:innen zusätzlich die Angabe „Rentner“, „Rentnerin“ oder „noch berufstätig“,
+          <strong>Ihr Profil:</strong> Name, Geburtsjahr, ob Sie Seniorin, Senior oder Studierende sind,
+          bei Seniorinnen und Senioren zusätzlich die Angabe „Rentner“, „Rentnerin“ oder „noch berufstätig“,
           bei Studierenden die Fachrichtung, außerdem ein freier Text über Sie, Ihre Interessen und
           – wenn Sie eines hochladen – ein Foto.
         </li>
