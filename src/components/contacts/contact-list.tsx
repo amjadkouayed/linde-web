@@ -49,8 +49,10 @@ export async function ContactList() {
               <Avatar name={c.other_name} path={c.other_avatar_path} size={64} />
               <div className="flex min-w-0 flex-grow flex-col gap-1">
                 <span className="font-serif text-[21px] font-semibold">{c.other_name}</span>
-                {c.last_message_body ? (
-                  <span className="truncate text-[17px] text-muted">{c.last_message_body}</span>
+                {(c.last_message_body ?? c.intro_message) ? (
+                  <span className="truncate text-[17px] text-muted">
+                    {c.last_message_body ?? c.intro_message}
+                  </span>
                 ) : (
                   <span className="text-[17px] text-muted">Schreiben Sie die erste Nachricht.</span>
                 )}

@@ -74,6 +74,18 @@ export async function answerConnectionRequest(
 
   if (error) return { error: friendlyError(error) }
 
+  // Accepting means "I want to talk": open the conversation, where the
+  // greeting is waiting as its first message, instead of leaving the person on
+  // a list where the card they just answered has vanished.
+  if (accept) {
+    const { data } = await supabase
+      .from('connection_overview')
+      .select('other_username')
+      .eq('connection_id', connectionId)
+      .maybeSingle()
+    if (data?.other_username) redirect(`/kontakte/${data.other_username}`)
+  }
+
   refresh()
   return { error: null }
 }
