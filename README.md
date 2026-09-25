@@ -38,7 +38,7 @@ of these is which before you paste anything anywhere:
 | `NEXT_PUBLIC_SUPABASE_URL` | no | `.env.local`, Vercel env vars |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or `sb_publishable_…`) | no — designed to ship to the browser | same |
 | `RESEND_API_KEY` | **yes** | local `.env`; for cloud, Supabase dashboard → Auth → SMTP |
-| `service_role` / `sb_secret_…` | **yes** | local/Vercel server environment only when showcase bypass is enabled |
+| `service_role` / `sb_secret_…` | **yes** | nowhere — nothing in this app needs it |
 | database password | **yes** | Supabase dashboard only |
 
 The anon/publishable key is not a credential. It names the project and nothing else; row level
@@ -66,21 +66,24 @@ built-in sender cannot carry that on the free tier, for three independent reason
 So production needs custom SMTP. Locally none of this applies — mail goes to Mailpit on
 <http://localhost:54324>. See **Deploying → Email** below for the setup.
 
-### Showcase sign-in bypass
+### Showcase sign-in (no e-mail code)
 
-For a temporary product showcase, set `SHOWCASE_REQUIRE_EMAIL_OTP=false` and provide
-`SUPABASE_SERVICE_ROLE_KEY` in the server environment. Showcase accounts then sign in without the
-e-mail code. It is **off unless the variable is exactly `false`**, and never read by client code.
+For a showcase, anyone can sign in by typing an e-mail address — no code. It is switched in the
+database, not in Vercel, and needs no secret key (`0015_showcase_login.sql`):
 
-It only ever skips the code for **showcase accounts** (`app_metadata.showcase = true`): the demo
-profiles, and new sign-ups made while it is on. An existing real account still gets its code —
-otherwise typing someone's address would be enough to read their chats.
+```sql
+update app.showcase set open_until = '2026-09-25 23:59+02';  -- open until then
+update app.showcase set open_until = now();                  -- close now
+```
 
-Remove `SHOWCASE_REQUIRE_EMAIL_OTP` (or set it to `true`) to restore the normal flow for everyone.
+It only ever opens **showcase accounts** (`app_metadata.showcase`): new addresses, created on the
+spot, and the demo profiles. A real account, made with a code, still gets its code — otherwise
+typing someone's address would be enough to read their chats. After closing, clear the one-time
+passwords it handed out:
 
-The service-role key bypasses RLS and must never be exposed through `NEXT_PUBLIC_*`, committed to
-the repository, or shared in chat. Remove the key and disable the switch as soon as the showcase
-ends.
+```sql
+update auth.users set encrypted_password = '' where raw_app_meta_data->>'showcase' = 'true';
+```
 
 ## Architecture
 
@@ -200,10 +203,8 @@ Vercel project:
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://prufsrctzkilvhmatymd.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | the project's **publishable** key (`sb_publishable_…`) |
 | `NEXT_PUBLIC_SUPPORT_PHONE` | optional — shows a phone help line on login and the welcome page |
-| `SHOWCASE_REQUIRE_EMAIL_OTP` | optional — exactly `false` skips the code for showcase accounts; unset = code for everyone |
-| `SUPABASE_SERVICE_ROLE_KEY` | required when OTP is disabled; never expose client-side |
 
-Never expose the secret / service-role key client-side: it bypasses RLS.
+Never the secret / service-role key — nothing in this app needs it, and it bypasses RLS.
 
 ### Database — Supabase migrations
 

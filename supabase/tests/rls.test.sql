@@ -19,7 +19,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(36);
+select plan(40);
 
 create function tests_as(p_user uuid) returns void
 language plpgsql
@@ -395,6 +395,27 @@ select throws_ok(
 select ok(
   exists (select 1 from public.discover('49080', 50) where username = 'werner-pohl'),
   'discover() returns the username the card links by'
+);
+
+
+-- ---------------------------------------------------------------------------
+-- Showcase sign-in (0015)
+-- ---------------------------------------------------------------------------
+
+select tests_as_owner();
+set local role anon;
+select is(public.showcase_password('neu@showcase.test'), null, 'while closed, nobody gets a showcase password');
+
+select tests_as_owner();
+update app.showcase set open_until = now() + interval '1 hour';
+set local role anon;
+select isnt(public.showcase_password('Neu@Showcase.test'), null, 'while open, a new address gets in without a code');
+select is(public.showcase_password('lena@linde.test'), null, 'a real account is never opened without its code');
+
+select tests_as_owner();
+select ok(
+  (select raw_app_meta_data->>'showcase' = 'true' from auth.users where email = 'neu@showcase.test'),
+  'the new account is marked as a showcase account'
 );
 
 
