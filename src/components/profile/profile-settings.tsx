@@ -6,7 +6,6 @@ import { PhotoPicker } from '@/components/photo-picker'
 import {
   deleteMyAccount,
   removeMyAvatar,
-  signOut,
   updateMyAbout,
   updateMyAvatar,
   updateMyLocation,
@@ -56,7 +55,7 @@ export function ProfileSettings({
 
       <Location postalCode={postalCode} city={city} />
 
-      <form action={signOut}>
+      <form method="post" action="/auth/signout">
         <button
           type="submit"
           className="press min-h-[56px] w-full rounded-button border-2 border-control bg-raised text-[18px] font-bold text-ink"

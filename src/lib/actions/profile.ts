@@ -278,17 +278,6 @@ export async function recordOfferView(offerId: string): Promise<void> {
 }
 
 /**
- * There was no way out of the app at all before this. It matters for more than
- * tidiness: on a shared or borrowed device, no sign-out means the next person
- * is signed in as you.
- */
-export async function signOut(): Promise<void> {
-  const supabase = await createClient()
-  await supabase.auth.signOut()
-  redirect('/')
-}
-
-/**
  * Set the profile photo, then delete the one it replaces. The bucket is public,
  * so an old photo left behind would stay reachable by its URL indefinitely —
  * "change my photo" has to mean the old one is gone.
