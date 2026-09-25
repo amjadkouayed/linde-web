@@ -64,6 +64,34 @@ export function LoginForm() {
     setError(null)
     setEmail(normalizedEmail)
     startTransition(async () => {
+      try {
+        const showcaseResponse = await fetch('/api/auth/showcase', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ email: normalizedEmail, next }),
+        })
+
+        if (showcaseResponse.ok) {
+          const body = (await showcaseResponse.json()) as { redirectTo?: string }
+          if (body.redirectTo) {
+            window.location.assign(body.redirectTo)
+            return
+          }
+        // 404: showcase sign-in is off, or this is a real account that needs
+        // its code. Either way, carry on with the normal e-mail code below.
+        } else if (showcaseResponse.status !== 404) {
+          const contentType = showcaseResponse.headers.get('content-type') ?? ''
+          const body = contentType.includes('application/json')
+            ? (await showcaseResponse.json()) as { error?: string }
+            : null
+          setError(body?.error ?? 'Die Anmeldung konnte nicht gestartet werden.')
+          return
+        }
+      } catch {
+        setError('Die Anmeldung konnte nicht gestartet werden. Bitte versuchen Sie es erneut.')
+        return
+      }
+
       const supabase = createClient()
       const { error } = await supabase.auth.signInWithOtp({
         email: normalizedEmail,
@@ -128,7 +156,7 @@ export function LoginForm() {
           <div className="flex flex-col gap-2">
             <h1 className="font-serif text-[30px] font-bold">Anmelden</h1>
             <p className="text-[18px] leading-relaxed">
-              Wir schicken Ihnen einen Code per E-Mail. Ein Passwort brauchen Sie nicht.
+              Geben Sie Ihre E-Mail-Adresse ein. Ein Passwort brauchen Sie nicht.
             </p>
           </div>
 
@@ -163,10 +191,10 @@ export function LoginForm() {
 
           <button
             type="submit"
-            disabled={pending || !email}
+            disabled={pending}
             className="press min-h-[62px] rounded-button bg-brand text-[20px] font-bold text-surface disabled:opacity-60"
           >
-            {pending ? 'Wird gesendet …' : 'Code per E-Mail schicken'}
+            {pending ? 'Wird angemeldet …' : 'Mit E-Mail anmelden'}
           </button>
         </form>
       ) : (
