@@ -42,7 +42,11 @@ async function Feed({ searchParams }: { searchParams: Search }) {
 
   // Tells "we do not know that postal code" apart from "nobody lives there yet".
   // Those need different messages: one is a typo, the other is not their fault.
-  const area = await lookupPostalCode(postalCode)
+  // Both queries run at once: an unknown code simply finds nobody.
+  const [area, cards] = await Promise.all([
+    lookupPostalCode(postalCode),
+    searchNearby(postalCode, radius),
+  ])
   if (!area) {
     return (
       <div className="flex flex-col gap-6">
@@ -55,7 +59,6 @@ async function Feed({ searchParams }: { searchParams: Search }) {
     )
   }
 
-  const cards = await searchNearby(postalCode, radius)
   // An empty list is a dead end; the next radius up is a way forward.
   const widerRadius = RADIUS_OPTIONS.find((option) => option > radius)
 
