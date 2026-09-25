@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Bitter, Karla } from 'next/font/google'
+import { preconnect } from 'react-dom'
 
 import { SiteFooter } from '@/components/site-footer'
 
@@ -25,6 +26,10 @@ export const metadata: Metadata = {
 }
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
+  // Photos and live chat come straight from Supabase: open that connection
+  // while the page is still arriving, not when the first <img> asks for it.
+  preconnect(process.env.NEXT_PUBLIC_SUPABASE_URL!)
+
   return (
     <html lang="de" className={`${bitter.variable} ${karla.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
