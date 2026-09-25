@@ -484,6 +484,7 @@ export type Database = {
           username: string
         }[]
       }
+      showcase_password: { Args: { p_email: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
