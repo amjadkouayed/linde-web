@@ -45,7 +45,7 @@ export async function ContactList() {
         <section className="flex flex-col gap-4">
           <SectionHeading>Meine Kontakte</SectionHeading>
           {accepted.map((c) => (
-            <ContactLink key={c.connection_id} href={`/kontakte/${c.connection_id}`}>
+            <ContactLink key={c.connection_id} href={`/kontakte/${c.other_username}`}>
               <Avatar name={c.other_name} path={c.other_avatar_path} size={64} />
               <div className="flex min-w-0 flex-grow flex-col gap-1">
                 <span className="font-serif text-[21px] font-semibold">{c.other_name}</span>

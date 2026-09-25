@@ -60,8 +60,8 @@ export function LocationFilter({
           />
         </div>
 
-        <fieldset className="flex flex-col gap-1.5">
-          <legend className="mb-1.5 text-[17px] font-bold">Umkreis</legend>
+        <fieldset className="flex w-full flex-col gap-1.5 sm:w-auto">
+          <legend className="mb-1.5 text-[17px] font-bold">Umkreis in km</legend>
           {/* Five equal columns on a phone: in one unwrapped row the chips were
               497 px wide and pushed the whole Discover page sideways. */}
           <div className="grid grid-cols-5 gap-1.5 sm:flex">
@@ -73,6 +73,7 @@ export function LocationFilter({
                   key={value}
                   type="button"
                   aria-pressed={isActive}
+                  aria-label={`${value} km`}
                   onClick={() => {
                     setRadius(value)
                     submit(value)
@@ -83,7 +84,8 @@ export function LocationFilter({
                       : 'border-control bg-surface text-ink'
                   }`}
                 >
-                  {value} km
+                  {/* The legend says "km"; five "100 km" chips do not fit a phone. */}
+                  {value}
                 </button>
               )
             })}

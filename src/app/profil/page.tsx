@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { Suspense } from 'react'
 
 import { Avatar } from '@/components/avatar'
@@ -47,38 +46,17 @@ async function Content() {
             </span>
           </div>
         </div>
-
-        {profile.bio && <p className="text-pretty text-[18px] leading-relaxed">{profile.bio}</p>}
-
-        {profile.interests.length > 0 && (
-          <ul className="flex list-none flex-wrap gap-2 p-0">
-            {profile.interests.map((interest) => (
-              <li key={interest} className="rounded-full bg-tag px-3.5 py-1.5 text-[16px] font-bold">
-                {interest}
-              </li>
-            ))}
-          </ul>
-        )}
       </section>
 
       <ProfileSettings
         name={profile.name}
+        role={profile.role}
+        bio={profile.bio}
+        interests={profile.interests}
         avatarPath={profile.avatar_path}
         postalCode={profile.postal_code}
         city={profile.city}
       />
-
-      <nav className="flex flex-wrap gap-5 border-t border-line pt-6 text-[17px]">
-        <Link href="/datenschutz" className="underline">
-          Datenschutzerklärung
-        </Link>
-        <Link href="/nutzungsbedingungen" className="underline">
-          Nutzungsbedingungen
-        </Link>
-        <Link href="/impressum" className="underline">
-          Impressum
-        </Link>
-      </nav>
     </div>
   )
 }

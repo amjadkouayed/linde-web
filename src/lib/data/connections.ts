@@ -29,14 +29,18 @@ export async function getConnections(): Promise<ConnectionOverview[]> {
   return data ?? []
 }
 
-/** One conversation, for the chat screen. RLS returns nothing for a stranger's id. */
-export async function getConnection(connectionId: string): Promise<ConnectionOverview | null> {
+/**
+ * One conversation, for the chat screen, by the other person's username. The
+ * view only holds the caller's own connections and there is one per pair, so
+ * a username identifies at most one row; RLS returns nothing for a stranger.
+ */
+export async function getConnectionWith(username: string): Promise<ConnectionOverview | null> {
   const supabase = await createClient()
 
   const { data } = await supabase
     .from('connection_overview')
     .select('*')
-    .eq('connection_id', connectionId)
+    .eq('other_username', username)
     .maybeSingle()
 
   return data

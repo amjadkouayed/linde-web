@@ -27,3 +27,9 @@ export function personLine({
   const detail = role === 'student' ? studyField : status ? STATUS_LABEL[status] : null
   return [age != null ? `${age} Jahre` : null, detail].filter(Boolean).join(' · ')
 }
+
+/** What onboarding and Profil offer to pick from. */
+export const INTERESTS: Record<'student' | 'senior', string[]> = {
+  student: ['Deutsch üben', 'Kochen', 'Musik', 'Geschichte', 'Spazieren', 'Schach', 'Technikhilfe'],
+  senior: ['Deutsch beibringen', 'Backen', 'Erzählen', 'Karten spielen', 'Kino', 'Spazieren', 'Musik'],
+}

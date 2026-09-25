@@ -4,13 +4,9 @@ import { useState, useTransition } from 'react'
 
 import { PhotoPicker } from '@/components/photo-picker'
 import { completeOnboarding } from '@/lib/actions/profile'
+import { INTERESTS } from '@/lib/labels'
 
 type Role = 'student' | 'senior'
-
-const INTERESTS: Record<Role, string[]> = {
-  student: ['Deutsch üben', 'Kochen', 'Musik', 'Geschichte', 'Spazieren', 'Schach', 'Technikhilfe'],
-  senior: ['Deutsch beibringen', 'Backen', 'Erzählen', 'Karten spielen', 'Kino', 'Spazieren', 'Musik'],
-}
 
 const STATUSES = [
   { value: 'rentnerin', label: 'Rentnerin' },

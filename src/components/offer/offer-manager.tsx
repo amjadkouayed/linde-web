@@ -236,6 +236,8 @@ export function OfferManager({
           </div>
         </div>
 
+        {/* Everything the Discover card shows, so the preview does not lie. */}
+        {profile.bio && <p className="text-pretty text-[19px] leading-relaxed">{profile.bio}</p>}
         <p className="text-pretty text-[19px] leading-relaxed">{offer?.description}</p>
 
         <ul className="flex flex-wrap gap-2">
@@ -243,6 +245,14 @@ export function OfferManager({
             {profile.postal_code} {profile.city}
           </Fact>
           {offer?.availability && <Fact>{offer.availability}</Fact>}
+          {profile.interests.map((interest) => (
+            <li
+              key={interest}
+              className="rounded-full border border-line bg-tag px-3.5 py-1.5 text-[16px] font-bold"
+            >
+              {interest}
+            </li>
+          ))}
         </ul>
       </section>
 
@@ -253,7 +263,8 @@ export function OfferManager({
               {stats?.views_this_week ?? 0}
             </span>
             <span className="text-[18px] leading-snug">
-              Personen haben Ihr Angebot diese Woche angesehen.
+              {stats?.views_this_week === 1 ? 'Person hat' : 'Personen haben'} Ihr Angebot diese
+              Woche angesehen.
             </span>
           </div>
         </div>
